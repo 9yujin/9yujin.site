@@ -1,15 +1,26 @@
 {
   "index": "Introduction",
-  "another": "Another Page",
-  "advanced": "Advanced (A Folder)",
+  "writings": "글을 위한 글",
+  "projects": "프로젝트",
+
   "about": {
     "title": "Resume",
     "type": "page"
   },
   "contact": {
-    "title": "Contact ↗",
-    "type": "page",
-    "href": "mailto:david0218@naver.com",
-    "newWindow": true
+    "title": "Contact",
+    "type": "menu",
+    "items": {
+      "mail": {
+        "title": "Email ↗",
+        "href": "mailto:david0218@naver.com",
+        "newWindow": true
+      },
+      "instagram": {
+        "title": "Instagram ↗",
+        "href": "https://instagram.com/9yu.oo",
+        "newWindow": true
+      }
+    }
   }
 }

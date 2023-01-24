@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shuding/nextra-docs-template.git"
+    "url": "git+https://github.com/9yujin/9yujin.site.git"
   },
   "author": "david0218",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/shuding/nextra-docs-template/issues"
   },
-  "homepage": "https://github.com/shuding/nextra-docs-template#readme",
+  "homepage": "https://9yujin.site",
   "dependencies": {
     "@emotion/react": "^11.10.5",
     "@emotion/serialize": "^1.1.1",

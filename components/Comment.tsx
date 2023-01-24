@@ -11,7 +11,7 @@ export const Comment: React.FC = () => (
         const scriptElem = document.createElement("script");
         scriptElem.src = "https://utteranc.es/client.js";
         scriptElem.async = true;
-        scriptElem.setAttribute("repo", "9yujin/nextra-docs-for-blog");
+        scriptElem.setAttribute("repo", "9yujin/9yujin.site");
         scriptElem.setAttribute("issue-term", "pathname");
         scriptElem.setAttribute("theme", "github-light");
         scriptElem.setAttribute("label", "comment : ");

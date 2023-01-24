@@ -15,6 +15,13 @@
     "isolatedModules": true,
     "jsx": "preserve"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  // 절대경로
+  "baseUrl": ".",
+  "paths": {
+    "@pages/*": ["pages/*"],
+    "@public/*": ["public/*"],
+    "@components/*": ["components/*"]
+  },
+  "include": ["custom.d.ts", "next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }

@@ -1,9 +1,12 @@
+import styled from "@emotion/styled";
 import React from "react";
+import { Spacing } from "./Spacing";
 
 export const Comment: React.FC = () => (
   <>
+    <Spacing size={32} />
     <hr />
-    <section
+    <StyledSection
       ref={(elem) => {
         if (!elem) {
           return;
@@ -21,3 +24,11 @@ export const Comment: React.FC = () => (
     />
   </>
 );
+
+const StyledSection = styled.section`
+  & > div {
+    margin-left: auto !important;
+    margin-right: 0;
+    max-width: 736px;
+  }
+`;

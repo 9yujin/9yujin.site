@@ -42,7 +42,7 @@ export const globalStyle = css`
   article {
     //전체 게시글 너비
     main {
-      /* max-width: 50rem !important; */
+      max-width: 50rem !important;
     }
 
     em {
@@ -107,6 +107,26 @@ export const globalStyle = css`
       & > em {
         font-style: normal;
         color: gray !important;
+      }
+    }
+
+    .gridbox {
+      display: grid;
+      grid-template-columns: 240px auto;
+      & > div:first-child {
+        & > p {
+          padding-top: 4px;
+        }
+      }
+      & > div:last-child {
+        padding: 32px 0;
+      }
+
+      @media (max-width: 700px) {
+        & > div:last-child {
+          padding-top: 20px;
+        }
+        grid-template-columns: 1fr;
       }
     }
   }

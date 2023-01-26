@@ -1,0 +1,17 @@
+{
+  "index": "Introduction",
+  "-": {
+    "type": "separator",
+    "title": "Note"
+  },
+  "frontend": "Frontend",
+  "others": "Others",
+  "cs": "CS",
+  "--": {
+    "type": "separator",
+    "title": "Activities"
+  },
+  "gosrock": "고스락 티켓",
+  "bankidz": "뱅키즈",
+  "gdsc": "GDSC"
+}

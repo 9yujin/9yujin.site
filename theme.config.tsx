@@ -1,6 +1,7 @@
 import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 import { useRouter } from "next/router";
+import Gyujin from "public/icons/gyujin.svg";
 
 const config: DocsThemeConfig = {
   useNextSeoProps() {
@@ -11,7 +12,12 @@ const config: DocsThemeConfig = {
       };
     }
   },
-  logo: <span>9yujin</span>,
+  logo: (
+    <>
+      <Gyujin />
+      <span style={{ marginLeft: "8px", paddingTop: "2px" }}>Archive</span>
+    </>
+  ),
   project: {
     link: "https://github.com/9yujin",
   },
@@ -38,6 +44,15 @@ const config: DocsThemeConfig = {
     ),
   },
   gitTimestamp: null,
+  sidebar: {
+    titleComponent({ title, type }) {
+      if (type === "separator") {
+        return <span className="cursor-default seperator">{title}</span>;
+      }
+      return <>{title}</>;
+    },
+    defaultMenuCollapseLevel: 0,
+  },
 };
 
 export default config;

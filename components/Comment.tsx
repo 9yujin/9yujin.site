@@ -8,7 +8,7 @@ export const Comment: React.FC = () => {
   useMount(() =>
     setSection(
       <StyledSection
-        className="comment"
+        id="comment"
         ref={(elem) => {
           if (!elem) {
             return;

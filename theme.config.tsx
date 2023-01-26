@@ -3,7 +3,6 @@ import { DocsThemeConfig } from "nextra-theme-docs";
 import { useRouter } from "next/router";
 import Gyujin from "public/icons/gyujin.svg";
 import { Comment } from "./components";
-import { useMount } from "react-use";
 
 const config: DocsThemeConfig = {
   useNextSeoProps() {
@@ -48,12 +47,19 @@ const config: DocsThemeConfig = {
   gitTimestamp: null,
   darkMode: false,
   main: ({ children }) => {
-    return (
-      <>
-        {children}
-        <Comment />
-      </>
-    );
+    const displayHidden = ["/", "/devlog", "/resume", "/writings"];
+    const { pathname } = useRouter();
+
+    if (displayHidden.includes(pathname)) {
+      return <>{children}</>;
+    } else {
+      return (
+        <>
+          {children}
+          <Comment />
+        </>
+      );
+    }
   },
   sidebar: {
     titleComponent({ title, type }) {

@@ -106,10 +106,16 @@ export const articleStyle = css`
     // resume 목록 그리드
     .gridbox {
       display: grid;
+      h4 {
+        margin-top: 0rem !important;
+      }
       grid-template-columns: 240px auto;
       & > div:first-of-type {
         & > p {
           padding-top: 4px;
+        }
+        & > div {
+          align-items: center;
         }
       }
       & > div:last-child {
@@ -121,6 +127,18 @@ export const articleStyle = css`
           padding-top: 20px;
         }
         grid-template-columns: 1fr;
+      }
+    }
+
+    .resume-works {
+      grid-template-columns: 200px auto;
+    }
+    @media (max-width: 700px) {
+      .resume-works {
+        grid-template-columns: 64px auto;
+      }
+      img {
+        margin-top: 20px;
       }
     }
 

@@ -1,0 +1,110 @@
+import { Comment, Img } from "components";
+
+# \[3주차] todo mate 리액트 클론 (1)
+
+_2022.10.06_
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fwfc11%2FbtrNXUY9Bn4%2FL7FOKW4E4bvo2WujQVYaFK%2Fimg.png)
+
+만들어둔 과제 커리큘럼을 찬찬히 다시 보다가. 어라 이거 투두메이트 아닌가?
+
+해서 GDSC 스터디 기간 동안 투두메이트 클론코딩 프로젝트를 시작해보기로.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbpddIA%2FbtrNX8ixwaF%2FkZkkd6oIbAilUx5rC14ik0%2Fimg.png)
+_좌 : 클론 / 우 : 투두메이트_
+
+클론코딩인 만큼 최대한 똑같이 스타일을 넣으려 노력했다. 갖고 있는 산세리프 글꼴을 몇개 넣어봤는데, 프리텐다드였다. 좋아하는 폰트야. 그 외에 이미지나 아이콘 등은 개발자도구 네트워크탭에서 가져오거나 피그마에서 직접 만들어 svg로 내보내 사용했다.
+
+---
+
+코드를 짜기에 앞서 컴포넌트 구조를 어떻게 짤지에 대해서 고민을 꽤 오래 했었다. 실제 투두메이트를 보면 드래그앤 드랍으로 투두를 옮겨 순서를 바꿀 수 있게 되어 있다. 심지어 다른 카테고리로도!
+
+하지만 `- 카테고리별 투두- -카테고리별 투두-` 이렇게 분리해놓으면 나중에 드래그앤드랍을 구현할 때 다른 카테고리로 이동이 안될 것 같았다. 통으로 배열로 사용해야하나 싶었지만... 시간이 없기 때문에 일단은 떠오르는 대로 가장 직관적인 구조를 사용했다.
+
+```
+const Feed = () => {
+  const categories = useRecoilValue(categoryState);
+
+  return (
+    <Wrapper>
+      <div>Feed</div>
+      <List>
+        {categories.map((category) => (
+          <FeedItemList category={category} key={category.label} />
+        ))}
+      </List>
+    </Wrapper>
+  );
+};
+
+export default Feed;
+```
+
+카테고리의 배열을 갖고 와서 각 카테고리마다의 투두리스트를 `map`으로 보여주도록 했다.
+
+```
+const FeedItemList = ({ category }: { category: ICategory }) => {
+  const items = useRecoilValue(todoSelector(category.label));
+  const [open, setOpen] = useState<boolean>(false);
+  return (
+    <>
+      <CategoryButton category={category} setOpen={setOpen} />
+      {items.map((item) => (
+        <TodoItem item={item} key={item.id} />
+      ))}
+      {open && <InputForm category={category} setOpen={setOpen} />}
+    </>
+  );
+};
+
+export default FeedItemList;
+```
+
+각 카테고리별 피드 컴포넌트 안에서 카테고리 안에 속하는 투두 목록들을 가지고 온다. recoil의 selector를 처음 써보았다.
+
+#### **recoil selector**
+
+```
+export const todoSelector = selectorFamily<ITodoItem[], string>({
+  key: 'todoSelector',
+  get:
+    (categoryName: string) =>
+    ({ get }) =>
+      get(todoState).filter((todo) => todo.category.label === categoryName),
+});
+```
+
+selector는 순수함수이다. get함수에서는 `RecoilValueReadOnly` 객체를 반환한다고 함. 함수를 하나 더 감싸서 인자를 넘겨 줄 수 있다. 카테고리 이름을 받아와서 해당 카테고리에 해당하는 투두만 `filter`로 가져올 수 있도록 했다.
+
+구현한 내용은 아래와 같다. 이번주 과제는 저번 주에 바닐라 JS로 만들었던 투두리스트를 리액트를 이용해 만들어보는 과제였다. 투두메이트에서 투두를 체크하는 부분, 그러니까 Feed 부분만 만들어보았다. 몇시간 내에 내야해서 날림으로 짠 코드라 대대적인 리팩토링이 필요하다. 특히 상태관리하는 구조를 처음부터 다시 생각해야할 것 같다.
+
+#### **투두 생성하기**
+
+![](https://blog.kakaocdn.net/dn/cVz9DC/btrNZNYKAZX/8w9AeqFjUDRDYga6fZ1hLK/img.gif)
+
+#### **투두 체크하기 토글**
+
+![](https://blog.kakaocdn.net/dn/tePqL/btrNZGZG0BV/bJYknjg5Xoy1FwuP0Tbu71/img.gif)
+
+#### **투두 삭제하기**
+
+![](https://blog.kakaocdn.net/dn/codkCv/btrNXJwPVif/M5BScJLLcGR8pFlZA9akfk/img.gif)
+
+뱅키즈에서 썼던 [react-spring-bottom-sheet](https://github.com/stipsan/react-spring-bottom-sheet) 라이브러리를 사용했다. 바텀시트 컴포넌트가 매 투두아이템 컴포넌트에 들어가는데, 투두아이템 컴포넌트가 삭제되면서 바텀시트가 한번에 뚝 사라지는 현상이 있었음. 바텀시트를 더 상위에 전역으로 두고 사용하면 될 것 같은데, 그럼 상태관리 구조를 뜯어고쳐야할 것 같아서.. 일단 반창고만 붙여놨다.
+
+```
+  const handleDeleteTodo = () => {
+    onDismiss();
+    setTimeout(() => onDeleteTodo(), 300);
+  };
+```
+
+바텀시트가 완전히 내려간 다음에 투두가 사라지도록 했다.
+
+---
+
+커리큘럼마다 의도하는 내용이 있고 각 과제에서 사용하고자 하는 기술들이 있지만 구현에 급급해서 하던대로 익숙한 스택으로 코드를 쌌다. '처음엔 state와 props만을 이용해서 관리하다가 다른 라이브러리를 이용해 상태관리하는 과정'을 기록하고 멤버들과도 공유하는게 원래 목표였는데, 아쉽다.
+
+[배포 링크](https://9yujin.github.io/todomate-clone-deploy/)
+
+<Comment />

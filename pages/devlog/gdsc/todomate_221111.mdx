@@ -1,0 +1,117 @@
+import { Comment, Img } from "components";
+
+# \[7주차] todo mate 리액트 클론 (3) - 달력 구현하기
+
+미루고 미루던 투두메이트 달력을 구현해봅시다. 프론트 공부를 하면서 한번쯤은 만들어야하는 관문 같은 느낌이 있는데, 이번 기회에 해보는거로. `dayjs` 라이브러리를 사용했다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FdSOFZU%2FbtrQ1lSDbrb%2FYqApmSUayiOKlKhzC8qSV0%2Fimg.png)
+
+실제 투두메이트라고 해도 믿겠죠? 아직 달력에서 날짜를 선택하고 해당 날짜의 투두를 띄우는 로직은 구현하지 않았다. 다음주까지 해갈 예정. 달력을 만들기 전에 참고하기 위해 여러 블로그들을 가봤었는데, 뭔가 다 *~시원찮~*복잡하고 참고하기 싫은 방법밖에 없었다. 그래서 열심히 고민을 해보았음.
+
+<br />
+
+```tsx filename="Calender.tsx"
+const Calender = () => {
+  const [selectedDay, setSelectedDay] = useState<string>(
+    dayjs().format("MM/DD/YY")
+  );
+
+  const handleSelectDate = (v: string) => {
+    setSelectedDay(v);
+  };
+
+  const board = renderCalenderBoard(selectedDay, handleSelectDate);
+
+  // ... 생략
+
+  return (
+    <Wrapper>
+      {/* 생략 */}
+      <Board>{board}</Board>
+    </Wrapper>
+  );
+};
+
+export default Calender;
+```
+
+첫 렌더링 시 오늘 날짜로 선택된 날짜 상태를 초기화한다. `board`는 댤력의 내용 요소들인데, 코드가 길어져서 별도의 함수로 분리했다.
+
+<br />
+
+```tsx filename="renderCalenderBoard.tsx"
+const renderCalenderBoard = (
+  selectedDay: string,
+  handleSelectDate: (v: string) => void
+) => {
+  const initArr = (firstDay: number, daysInMonth: number) => {
+    return Array.from({ length: firstDay + daysInMonth }, (v, i) =>
+      i < firstDay
+        ? null
+        : dayjs(selectedDay)
+            .startOf("month")
+            .set("date", i - firstDay + 1)
+            .format("MM/DD/YY")
+    );
+  };
+
+  const [arr, setArr] = useState<(string | null)[]>([null]);
+
+  useEffect(() => {
+    const firstDay = dayjs(selectedDay).startOf("month").day();
+    const daysInMonth = dayjs(selectedDay).daysInMonth();
+    setArr(initArr(firstDay, daysInMonth));
+  }, [selectedDay]);
+
+  const content = arr.map((v, i) => (
+    <Item key={v ? v.toString() : `${v}${i}`} isSelected={selectedDay === v}>
+      {v && ( //TODO
+        <div onClick={() => handleSelectDate(v)}>
+          <TodoCheck fill="#DBDDDF" />
+          <span>{dayjs(v).date()}</span>
+        </div>
+      )}
+    </Item>
+  ));
+
+  return content;
+};
+```
+
+전체적인 아이디어는 이렇다.
+
+- 각 칸을 모두 담는 배열을 하나 만들고, grid를 이용해서 7개씩 가로로 나열한다.
+- 해당 월 첫째날의 요일을 받고, 그 요일값 보다 작은 인덱스일 때는 null을 담는다. 아닐 때는 `'MM/DD/YY'` 포맷의 문자열을 담는다. `set('date', i - firstDay + 1)` 메소드로 각 인덱스마다 맞는 날짜가 들어가도록 계산했다.
+- null이 아닐때만 Item 컴포넌트를 렌더링하면, 달력처럼 잘 나올것!!
+
+dayjs에서 제공하는 메소드들을 적절히 사용했다. 막 복잡한건 아니라서 어떠한 라이브러리 없이도 충분히 구현할 수 있을 것 같다.
+
+투두메이트에서 이전 달로 갈때는 마지막 일이, 다음 달로 가면 첫 날이 선택된다.
+
+```ts
+const handlePrevMonth = () => {
+  const newDate = dayjs(selectedDay)
+    .subtract(1, "month")
+    .endOf("month")
+    .format("MM/DD/YY");
+  setSelectedDay(newDate);
+};
+
+const handleNextMonth = () => {
+  const newDate = dayjs(selectedDay)
+    .add(1, "month")
+    .startOf("month")
+    .format("MM/DD/YY");
+  setSelectedDay(newDate);
+};
+```
+
+`endOf`와 `startOf` 메소드들을 적절히 사용하면 간단하게 나타낼 수 있다.
+
+- `set(unit : dayjs.UnitType, value : number)` : 날짜 객체의 원하는 값으로 설정
+- `endOf(unit : OpUnitType)` : 인자에 해당하는 단위의 마지막 값으로 설정. endOf('month')로 해당 월의 일수를 알 수 있다. `startOf()`도 똑같은 방식으로 사용
+- `add(value : number, unit : ManipulateType)` : 날짜 및 시간을 더함
+
+<Img src="https://blog.kakaocdn.net/dn/VKgmi/btrQYPIaAMO/Mjus9Hu6w0le1B5Pkr0Va0/img.gif" />
+
+<Comment />

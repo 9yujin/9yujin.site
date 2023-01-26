@@ -1,4 +1,11 @@
 {
-  "wil": "[Week0] WIL, Weekly I Learned 작성하기",
-  "dom": "[Week1] DOM, 브라우저 렌더링"
+  "wil_220928": "[0주차] WIL, Weekly I Learned 작성하기",
+  "dom_220928": "[1주차] DOM, 브라우저 렌더링",
+  "start_221001": "[2주차] 리액트 시작하기",
+  "todomate_221006": "[3주차] todo mate 클론 코딩 (1)",
+  "todomate_221103": "[6주차] todo mate 클론 코딩 (2)",
+  "todomate_221111": "[7주차] todo mate 클론 코딩 (3) - 달력 구현하기",
+  "todomate_221125": "[8주차] todo mate 클론 코딩 (4) - atomFamily, svg 활용",
+  "devtalk_221013": "[데브톡] 재미없는 군대얘기, 개발을 시작한지 1년이 되었다",
+  "devtalk_221201": "[데브톡] 디자인시스템과 리액트 컴포넌트"
 }

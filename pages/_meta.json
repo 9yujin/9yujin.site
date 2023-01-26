@@ -2,6 +2,10 @@
   "index": { "title": "Introduction", "display": "hidden" },
   "devlog": { "title": "Devlog", "type": "page" },
   "writings": { "title": "Essay", "type": "page" },
+  "resume": {
+    "title": "Resume",
+    "type": "page"
+  },
   "--": {
     "type": "separator",
     "title": "더보기"
@@ -15,10 +19,5 @@
     "title": "Instagram ↗",
     "href": "https://instagram.com/9yu.oo",
     "newWindow": true
-  },
-
-  "resume": {
-    "title": "Resume",
-    "type": "page"
   }
 }

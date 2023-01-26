@@ -44,6 +44,7 @@ const config: DocsThemeConfig = {
     ),
   },
   gitTimestamp: null,
+  darkMode: false,
   sidebar: {
     titleComponent({ title, type }) {
       if (type === "separator") {

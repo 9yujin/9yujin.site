@@ -7,7 +7,7 @@
   "frontend": "Frontend",
   "others": "Others",
   "cs": "CS",
-  "--": {
+  "-2": {
     "type": "separator",
     "title": "Activities"
   },

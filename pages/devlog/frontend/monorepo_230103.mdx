@@ -1,0 +1,141 @@
+import { Img } from "components";
+
+# 프론트엔드 모노레포 구축 삽질기 (1) - <br/>도입 이유, yarn workspaces, berry
+
+_2023.01.03_
+
+고스락에서 프로젝트를 세번째 이어오면서 효율적인 구조를 계속 고민하고 있다. 이번에 새로운 프로젝트, 두둥을 시작하면서 모노레포를 도입하게 되었다. 이번 포스팅은 모노레포 개발 환경과 CICD를 구축하면서 공부했던 것들과 삽질에 대한 기록이다.
+
+1. 도입 이유, yarn workspaces, berry
+
+2. [모노레포 환경 세팅 - vite, nextjs, storybook, emotion](http://9yujin.tistory.com/101)
+
+3. [CI/CD - docker, github actions 세팅](http://9yujin.tistory.com/102)
+
+---
+
+## 1\. 도입 이유
+
+작년에 처음 프로젝트를 시작할때 프론트쪽을 3개의 레포로 구성했다. 유저 프론트 사이트, 어드민 사이트, 그리고 컴포넌트로 분리했다. 스토리북 레포지토리의 컴포넌트들은 npm 패키지로 배포해서 프론트와 어드민에서 공통으로 사용할 수 있도록 했다. 이런 **멀티레포**는 가장 보편적인 방식이다.
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fmhaa3%2FbtrUVaBMmrH%2FjqpOf51FX04KXKVZn9b1a0%2Fimg.png"
+  width={500}
+/>
+
+사실 규모가 크지 않다보니 이렇다할 불편함까진 아니지만 아쉬움은 어느정도 있었다. 그래서 **모노레포**를 도입하기로 했다!
+
+#### 서비스 간에 코드를 공유하기 쉽다
+
+개발 순서를 계획할때 스토리북 레포에서 컴포넌트들을 다 뽑아놓고 서비스 개발로 넘어가기로 했고, 실제로 그렇게 진행했다. 하지만 당연히 중간에 기획과 디자인이 바뀌게 되면서 개발중에 계속 다른 레포지토리에 있는 컴포넌트들을 수정해야 하는 일이 생겼다. 그때마다 컴포넌트 프로젝트를 열어서 수정하고, 패키지 배포 기다렸다가, 다시 서비스 레포로 돌아와서 의존성 다운받는 과정이 필요했다. 상당히 귀찮아서 나중으로 갈수록 패키지 안쓰고 그냥 그때그때 대충 만들었던 기억이 있다. '중복으로 사용될 수 있는 것'에는 컴포넌트 뿐만 아니라 리액트 훅, 유틸함수, 타입 인터페이스 등이 있을 수 있다.
+
+#### 프로젝트 전체의 변경을 파악하기 쉽다
+
+기존에 어드민은 다른 친구들에게 맡기고 프론트만 신경써서 작업했다. 하지만 새 서비스를 기획하면서 유저 페이지보다 주 기능으로 여길 정도로 어드민 페이지의 중요성이 커졌다. 대충 antd로 던졌던 디자인에서 유저 페이지와 일관된 디자인으로 다시 작업했다. 같이 협업하는 친구들이 커밋한 작업들도 같이 파악하고 리뷰할 수 있어야 했다. 모든 서비스를 하나의 레포에서 관리할 수 있다면 협업에도 큰 도움이 될 수 있다.
+
+모노레포를 도입하기로 한 계기는 위 두가지이지만, 사실 원래 모노레포 사용의 가장 큰 이유는 **의존성 관리**에 있다. 여러 개의 레포에서 의존하는 패키지들을 루트에서 한번에 명시할 수 있고, 관리에 훨신 용이하다고 한다. 하지만 처음 환경을 구축하면서 애를 많이 먹었다. 의존성과 패키지매니저에 대해 고민을 많이 했고, 그만큼 이것저것 찾아보면서 공부했다. 하지만 아직도 너무 너무 어렵다.
+
+## 2\. Yarn workspaces
+
+모노레포 관리를 위한 도구로 yarn workspaces를 선택했다. 우리나라에서 가장 레퍼런스가 많고 문서도 잘되어 있어서 사용하게 되었다. workspace라는 것을 내가 이해하고 사용하고 있는대로 설명하면 다음과 같다!
+
+```bash
+├── apps
+│   ├── admin # 어드민 서비스. react + vite
+│   └── ticket # 티켓 서비스. nextjs
+└── shared
+    ├── ui # 공유 컴포넌트, theme. react + storybook
+    └── utils # 유틸 함수, 공용 훅, 타입 등. react
+```
+
+프로젝트가 이렇게 구성되어 있을 때, shared 디렉토리에 있는 패키지들은 apps에 있는 서비스로 불러와 사용될 수 있어야 한다. 즉 같은 '작업공간'안에 있고, ui와 utils가 의존하고 있는 패키지들도 함께 불러와 사용된다. yarn berry에서는 이런 기능을 yarn workspaces라는 이름으로 지원하고 있다.
+
+```json filename="./package.json"
+{
+  "name": "dudoong-front",
+  "packageManager": "yarn@3.3.0",
+  "private": true,
+  "workspaces": {
+    "packages": ["apps/*", "shared/*"]
+  }
+  // ...
+}
+```
+
+루트의 `package.json`에서 이렇게 workspace를 명시해준다. apps에 있는 모든 패키지와 shared에 있는 모든 패키지들이 workspace 안에 들어가있다.
+
+```json
+// shared/ui/package.json
+{
+  "name": "@dudoong/ui",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  //...
+
+}
+
+// apps/admin/package.json
+{
+  "name": "admin",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "@dudoong/ui": "workspace:shared/ui",
+    "@dudoong/utils": "workspace:shared/utils",
+    // ...
+  }
+  //...
+}
+```
+
+그리고 shared 레포와 apps 레포의 package.json에서 dependencies에 명시를 함으로서 workspace를 활용할 수 있다.
+
+`yarn install`을 하면 루트의 package.json에서 하위 디렉토리의 package.json에 명시된 의존성까지 한번에 설치할 수 있다. 이 과정에서 하위 패키지들에 설치된 패키지들의 중복을 제거한다. **루트의 node_modules로 호이스팅**된 것을 볼 수 있다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbvSwxx%2FbtrVeVpyqnL%2FS2xkIcM3evbfsD5EF8y82k%2Fimg.jpg)
+*https://classic.yarnpkg.com/blog/2018/02/15/nohoist/*
+
+우리가 일반적으로 외부 라이브러리 패키지를 쓰듯이 모노레포 안의 패키지들을 dependencies로 가져올 수 있다는게 굉장히 편하고 맘에 든다. 외부 패키지로 배포해서 사용할 수도 있지만 그럴 필요까지 없을때에는 딱 적당한 방법인 것 같다. 자세한 세팅은 다음 포스팅으로 나눠서 기록할 예정.
+
+## 3\. Yarn Berry
+
+`yarn workspaces`를 사용하면서 yarn berry의 `pnp`모드를 처음 도입해보려고 했다. 결론부터 말하자면 잘 안됐다. `tsconfig`문제인지 뭔지 모듈들의 경로를 제대로 못찾아왔다. 일반 cra환경과 터보레포 환경에서 똑같이 yarn berry 설정을 해봤을땐 문제 없이 잘 작동한것을 보아서, 내 프로젝트의 `tsconfig` 같은 설정 문제인 것 같다. 거의 이틀정도를 붙잡고 있었는데도 해결하지 못해서 일단 `pnp`모드는 제외하기로 했다. `pnp`를 지원하지 않는 라이브러리들도 몇 있고 next13에서 `pnp`로 인한 이슈가 많이 생겼다는 이야기를 들어서 오히려 맘편히 `node_module`를 사용하기로.
+
+[node_modules로부터 우리를 구원해 줄 Yarn Berry](https://toss.tech/article/node-modules-and-yarn-berry) 토스의 개쩌는 기술 블로그. 요약하자면 복잡하고 비효율적인 node_modules 대신 `.yarn/cache`에 zip파일의 형태로 저장하고, `.pnp.cjs`에 해당 파일을 찾을 수 있는 경로를 저장한다.
+
+```bash
+yarn set version berry
+yarn install
+```
+
+yarn의 버전을 berry로 설정하고 install하면 `yarnrc.yml` 파일이 생성된다.
+
+```bash
+yarn dlx @yarnpkg/sdks vscode
+```
+
+타입 모듈의 경로를 node_modules가 아닌 다른 경로에서 찾아야 한다. vscode를 사용할때는 위의 명령어를 이용해 다른 타입스크립트 sdk를 사용해야 한다. pnp가 제대로 작동을 안해서 저 sdk만 수백번은 설치해봤던 것 같다.
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fw1fZf%2FbtrVeVcp9kB%2F8mzEbphj66KaKPIVAFB1Hk%2Fimg.png"
+  width={500}
+/>
+*이렇게 1도 되는게 없었다*
+
+<br />
+
+```yaml filename=".yarnrc.yml"
+plugins:
+  - path: .yarn/plugins/@yarnpkg/plugin-typescript.cjs
+    spec: "@yarnpkg/plugin-typescript"
+
+yarnPath: .yarn/releases/yarn-3.3.0.cjs
+nodeLinker: node-modules
+```
+
+nodeLinker가 없으면 기본값 pnp모드로 동작한다. 수많은 시도 끝에 node-modules로 바꿔주었다.
+
+---
+
+다음 글은 전체적인 모노레포 환경 구축과 삽질기로 돌아오겠슴다.

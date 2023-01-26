@@ -1,0 +1,172 @@
+import { Img } from "components";
+
+# \[React] Docker + Nginx + GitHub Actions 프로젝트 배포하기 (1)
+
+_2022.07.03_
+
+깃허브 액션과 도커를 이용해 리액트 프로젝트 자동 배포 환경을 구축해보기. 도커에 관한 인강을 전역하고 얼마 안됐을때 조금 듣다 말았고, 그 이후론 CI/CD에 대한 경험이 없었기 때문에. 이 기회에 정리를 해놔야겠다는 생각이 든다. 내가 한 부분은 프론트 레포지토리 관련 뿐이지만 팀에서 구축한 전체적인 흐름을 적어보겠습니다. 전체적인 코드는 이전에 [고스락 프로젝트](https://github.com/Gosrock/Ticket-Deploy) 하면서 찬진이가 세팅한거 보고 열심히 뜯어서 배워왔음.
+
+#### 사용할 것들
+
+- Github Actions
+- Docker, Docker Compose
+- Nginx
+
+#### 전체적인 흐름
+
+1.  프론트 레포지토리의 main 브랜치에 push
+2.  Github Actions에서 이벤트를 감지하면 리액트 프로젝트를 빌드하고 도커 허브로 push
+3.  새로 배포를 원할 때 Deploy 레포지토리의 main에 push 혹은 release
+4.  Github Actions에서 이벤트를 감지하면 작성한 Docker Compose 파일 실행
+
+---
+
+#### 먼저, 프론트 레포지토리
+
+Github Actions에서 Main 브랜치에 푸쉬(Event) 시 실행할 작업(Workflow)를 설정한다.
+
+루트 디렉토리의 .github/workflows 위치에 yaml 파일을 생성한다. 이번 경우엔 `prod-deploy.yml`이라는 이름으로 만들었다.
+
+## prod-deploy.yml
+
+```yaml
+name: Docker
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # 도커 이미지에 env 파일 포함
+      - name: Create .env file
+        run: |
+          touch .env
+          echo REACT_APP_KAKAO_REST_API_KEY=${{ secrets.REACT_APP_KAKAO_REST_API_KEY }}\ >> .env
+
+      # 도커 메타
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: sanbonai06/bankids-client
+          tag-semver: |
+            {{version}}
+            {{major}}.{{minor}}
+
+      # 도커 빌드 관련 셋업
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      # 내 도커허브 로그인
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # 도커이미지 빌드하고 허브로 푸쉬
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.prod
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+```
+
+하나씩 뜯어보기로.
+
+#### Checkout
+
+- github actions는 해당 프로젝트를 리눅스 환경에 checkout하고 나서 실행 한다.
+- 우리가 깃에서 브랜치를 사용할 때 checkout 하는것처럼... 필수라고 함.
+- `uses`라는 키워드를 통해 누군가가 만들어놓은 actions을 불러와 사용할 수 있다.
+
+#### Create .env file
+
+- 리액트 프로젝트 내에서 사용하고 있는 .env 환경변수 파일을 리눅스 환경에도 직접 복사를 해서 넣어준다.
+- 기존에 있던 코드에서 가져왔는데, 구글링 해도 비슷한 경우를 찾기가 쉽지 않다. 좀 더 알아봐야될 듯.
+
+#### Docker meta
+
+- 깃과 깃허브 이벤트에서 메타데이터를 추출하는 작업이라고 한다.
+- 마지막 step에서 tags와 labels에 이 단계에서 나온 정보들이 사용되는 것 같음.
+
+#### Docker build
+
+- 이후 세 step은 도커 이미지를 빌드하고 허브로 푸쉬하는 작업에 대한 내용이다.
+- 도커허브 아이디와 비밀번호를 레포지토리 secret에 저장하고 도커 허브 로그인에 사용한다.
+- 이미지를 빌드하고 푸쉬를 한다. 저장되어 있는 도커파일의 경로를 지정해준다. [참고1](https://fe-developers.kakaoent.com/2022/220106-github-actions/)
+
+## Dockerfile.prod
+
+도커파일은 컨테이너에 설치해야 하는 패키지, 소스, 명령어 등을 기록한 하나의 파일이다. 이미지를 빌드할땐 이 파일을 이용해서 빌드한다.
+
+```docker
+FROM node:14 AS builder
+
+# set working directory
+WORKDIR /app
+
+
+# install app dependencies
+#copies package.json and package-lock.json to Docker environment
+COPY package-lock.json ./
+COPY package.json ./
+# Installs all node packages
+RUN npm ci
+
+
+# Copies everything over to Docker environment
+COPY . ./
+RUN npm run build
+
+#Stage 2
+#######################################
+#pull the official nginx:1.19.0 base image
+FROM nginx:1.19.0
+#copies React to the container directory
+# Set working directory to nginx resources directory
+# WORKDIR /usr/share/nginx/html
+COPY config/nginx/default.conf /etc/nginx/conf.d/default.conf
+# Remove default nginx static resources
+RUN rm -rf ./usr/share/nginx/html/*
+# Copies static resources from builder stage
+COPY --from=builder /app/build /usr/share/nginx/html/
+# Containers run nginx with global directives and daemon off
+EXPOSE 3000
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
+```
+
+도커파일도 루트 디렉토리에 생성해준다. 기존 코드에서 건들 것 없이 가져왔다. 도커파일에 대한 내용은 인강에서 들은게 있으므로 자세한 설명은 패쓰.. 특이사항으로는 nginx까지 같이 컨테이너 안에 말아 넣는다.
+
+- nginx도 base image로 사용할 수 있도록 되어 있으므로 가져오자.
+- 프로젝트 파일내에 `default.conf`로 작성해두고, 리눅스의 nginx 디렉토리로 복사해준다.
+- 빌드된 파일도 리눅스의 해당 디렉토리로 복사해준다. 해당 디렉토리는 nginx 설정 파일에서 root 경로와 맞추어 준다. nginx에 대한 포스팅도 이전에 해놨다. 찾아보십쇼.
+- 포트는 3000번으로 열어주고 백그라운드에서 실행
+
+## nginx/default.conf
+
+```nginx
+    server {
+    listen 3000;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri /index.html;
+    }
+
+    error_log /var/log/nginx/api_error.log;
+    access_log /var/log/nginx/api_access.log;
+   }
+```
+
+3000으로 열어놨응께 3000 listen 하고 있다가,, 요청이 들어오면 지정한 root에서 `index.html` 찾아서 실행한다.
+
+여기까지가 프론트 레포지토리에서 설정한 부분이다. 이렇게 도커 허브에 푸쉬하는 것 까지!! 커밍쑨

@@ -1,0 +1,163 @@
+import { Img } from "components";
+
+# 프론트엔드 모노레포 구축 삽질기 (3) - CICD 배포, Docker, Github Actions
+
+_2023.01.18_
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fbcu2Dp%2FbtrVPHpKqc8%2FKXS1OGMiqAKU8qb1b38bZ1%2Fimg.png)
+
+사실 한번에 끝날 줄 알고 dev 브랜치에 바로 테스트를 했다. 그 결과 아직 제대로 시작도 안했는데 커밋이 100개가 넘어가는 불상사가 생겼다. 어쨌든 모노레포 시리즈 마지막은 Docker와 Github Actions를 이용한 CI/CD 구축 삽질기. 별로 어려운 내용이 아니고, 그렇기에 거창한 정보 공유 목적은 결코 아니다. 하지만 나처럼 쌩판 처음 모노레포를 시도해보는 사람들이 쉽게 참고할 수 있을만한 글이 별로 없어 힘들었기 때문에 꾸역꾸역 쓰는 글.
+
+---
+
+기본적으로 이전에 구축해 사용하던 세팅을 바탕으로 하고 있다. ([1편](https://9yujin.tistory.com/47), [2편](https://9yujin.tistory.com/49)) 크게 다를건 없지만, 거기서부터 한줄한줄씩 바꿔가는 과정이라고 보면 될 것 같음. 따지고 보면 한줄한줄씩 고쳐나가는 과정..
+
+```json filename="package.json"
+  "scripts": {
+    // ...
+    "admin:build": "yarn workspace admin build",
+    "ticket:build": "yarn workspace ticket build",
+    "ticket:start": "yarn workspace ticket start",
+  },
+```
+
+먼저 루트의 package.json에서 위의 스크립트를 추가한다. 워크스페이스에 있는 한 app의 package.json에 있는 스크립트를 실행할 수 있다.
+
+## Dockerfile.admin
+
+```docker
+FROM node:16 AS builder
+# set working directory
+WORKDIR /app
+# install app dependencies
+COPY package.json ./
+COPY yarn.lock ./
+# Installs all node packages
+RUN npm install yarn --global --force
+RUN yarn install --immutable --immutable-cache --check-cache
+
+# Copies everything over to Docker environment
+COPY . ./
+RUN yarn install --immutable
+RUN yarn admin:build
+
+#Stage 2
+#######################################
+#pull the official nginx:1.19.0 base image
+FROM nginx:1.19.0
+COPY ./nginx/admin.conf /etc/nginx/conf.d/default.conf
+# Remove default nginx static resources
+RUN rm -rf ./usr/share/nginx/html/*
+# Copies static resources from builder stage
+COPY --from=builder /app/apps/admin/dist /usr/share/nginx/html/
+EXPOSE 3100
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
+```
+
+어드민 레포지토리에 대한 도커파일이다. 기존 9월공연 서비스에서 쓰던걸 토대로 바꾸다 보니 `yarn install`을 두번에 나누어서 하게 되었는데, 지금 생각하니까 그럴 필요가 없었네.
+
+yarn을 사용하기 때문에 npm에서 먼저 yarn을 설치한 후에 의존성 패키지들을 설치해준다. CI 환경에서는 yarn.lock파일을 생성하지 않고 업데이트가 필요한 경우 실패하도록 해주는게 안전하다 한다. `--frozen-lockfile` 옵션으로 사용할 수 있었다. 이제는 그보다 `--immutable` 옵션을 사용하라고 권장하고 있다. `--immutable-cache`와 `--check-cache` 옵션은 zero-install 환경에서 사용한다고 하는데,, 지금은 zero-install을 사용하지 않고 있으니까 수정해야겠다.
+
+의존성 설치 후에는 위에 스크립트에 작성해놓았던 `yarn admin:build` 명령으로 어드민 프로젝트를 빌드한다. 그 뒤론 nginx 설정파일의 경로 외에는 변경사항이 없다.
+
+## Dockerfile.ticket
+
+다음은 Next 프로젝트 관련 도커파일이다. 넥스트를 쓰는 프로젝트가 처음이라 비교적 삽질이 많았다.
+
+```docker
+FROM node:16-alpine AS builder
+# set working directory
+WORKDIR /app
+# install app dependencies
+COPY package.json ./
+COPY yarn.lock ./
+# Installs all node packages
+RUN npm install yarn --global --force
+RUN yarn install --immutable --immutable-cache --check-cache
+
+
+# Copies everything over to Docker environment
+COPY . ./
+RUN rm -rf apps/admin
+
+RUN yarn install
+RUN yarn ticket:build
+RUN rm -rf apps/ticket/.next/cache
+
+#Stage 2
+EXPOSE 3000
+CMD ["yarn", "ticket:start"]
+```
+
+리액트 프로젝트 배포할때와 크게 다른건 없다. 다만 Nginx를 사용하지 않고 Next 서버를 실행시켜 사용한다. 모노레포 관련 세팅 삽질을 하면서 어딘가 꼬였는지, `yarn install` 에 `--immutable` 옵션을 주면 yarn.lock이 변경될 수 있다고 오류내고 끝내버리더라. 옵션을 제거해주어도 일단 빌드 잘되고 배포도 잘 되는것을 보고... 일단은 그렇게 했다. 모래 위에 건물을 짓는 느낌이다.
+
+처음 딱 도커 이미지를 허브에 올렸더니 무려 750MB의 용량을 갖고 있었다. 이게 말이 되나?? 최대한 이미지의 크기를 줄여보려고 했다.
+
+node 이미지를 가져올 때 용량이 가장 작은 alpine 버전을 사용하도록 바꿨다. 이것 하나만으로 거의 200MB 가까이 줄어들었다. 추가로 어드민 관련 디렉토리를 지웠고, 빌드 후 나온 .next의 cache 파일들도 삭제하도록 했다. 그 결과 450MB정도로 줄일 수 있었다. 하지만 여전히 크다..! 원래 이런건가.
+
+## GitHub Actions
+
+액션 워크플로우 파일은 티켓과 어드민이 거의 동일하다. 중요하게 볼 부분은 태그 부분이다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FMOVD8%2FbtrWyOhEwrM%2FTesoem7NJpLeFcq7mBwtD0%2Fimg.png)
+
+깃허브에서 새로운 태그를 달고 릴리즈를 하면 액션이 트리거되고 도커 이미지가 허브로 올라가도록 하는, 그런 흐름을 갖고 있다. 티켓과 어드민 레포 각각 별개로 실행되어야 한다. 릴리즈를 할때 태그명에 `'Ticket-\*'`, `'Admin-\*'`과 같이 앞에 레포명을 붙여서 올린다. 그럼 그 태그 명에 맞는 액션이 실행되도록 했다.
+
+```yaml
+name: Build & Docker Push - Ticket
+on:
+  push:
+    # branches: [dev]
+    # paths: ['apps/ticket/pages/**']
+    # Publish semver tags as releases.
+    tags:
+      - Ticket-v*.*.*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # 도커 이미지에 env 파일 포함
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "${{ secrets.ENV_VARS_TICKET }}" >> .env
+      # 도커 이미지 버전 가져오기
+      - name: Get the version
+        id: get_version
+        run: |
+          RELEASE_VERSION_WITHOUT_V="$(cut -d'v' -f2 <<< ${GITHUB_REF#refs/*/})"
+          echo ::set-output name=VERSION::$RELEASE_VERSION_WITHOUT_V
+
+      # 도커 빌드 관련 셋업
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      # 내 도커허브 로그인
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # 도커이미지 빌드하고 허브로 푸쉬
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.ticket
+          platforms: linux/amd64
+          push: true
+          tags: david0218/dudoong-ticket:${{ steps.get_version.outputs.VERSION }}
+```
+
+중요한 부분은 깃허브에서 릴리즈된 버전을 가져오고, 'v'앞의 내용을 떼서 딱 'x.x.x' 부분만 태그로 달아준다는 것. 백엔드 팀장친구의 코드이다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FPaFfs%2FbtrWCdhU5K2%2Fw68JMR52uioPAG2nWgfGGK%2Fimg.png)
+
+도커 허브에 딱 원하던 태그로 달려서 올라가는 것을 볼 수 있다. 컴포즈에서 원하는 태그로 가져와서 배포하도록 할 수 있다.
+
+---
+
+분명히 삽질은 더 많이 했던 것 같은데, 나중에 기억 끄집어서 쓰려니까 빠진 부분이 많은 것 같다. 하쒸.

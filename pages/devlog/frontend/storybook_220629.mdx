@@ -1,0 +1,158 @@
+import { Comment, Img } from "components";
+
+# \[React] Storybook 설정 및 Github Actions 배포 자동화
+
+## 1\. 스토리북 설치
+
+- 기존 프로젝트의 루트 디렉터리 내에서 실행
+- `.storybook` 디렉토리 안에 `main.js`와 `preview.js`가 생성된다.
+
+```bash
+# Add Storybook:
+npx storybook init
+```
+
+- `npm run storybook` 명령어를 통해 로컬호스트 6006번 포트에서 실행할 수 있다.
+
+## 2\. Styled-components 적용
+
+- preview.js에서 설정을 해준다.
+
+```jsx filename="preview.js"
+import React from "react";
+import { ThemeProvider } from "styled-components";
+import { GlobalStyle } from "../src/lib/styles/global-style";
+import { theme } from "../src/lib/styles/theme";
+
+export const decorators = [
+  (Story) => (
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <Story />
+    </ThemeProvider>
+  ),
+];
+
+export const parameters = {
+  actions: { argTypesRegex: "^on[A-Z].*" },
+  controls: {
+    matchers: {
+      color: /(background|color)$/i,
+      date: /Date$/,
+    },
+  },
+};
+```
+
+ThemeProvider와 GlobalStyle이 스토리북 안에서도 적용되도록 해주었다.
+
+## 3\. TypeScript Doc 관련 세팅
+
+이전에 JS에서 스토리북을 사용했을때는 PropTypes로 직접 타입을 지정하고 Docs 페이지를 사용할 수 있었다. typescript에선 type이나 interface를 지정할때 주석을 함께 달면 Docs에서 볼 수 있다.
+
+```bash
+yarn add --dev react-docgen-typescript-loader
+```
+
+## \*\*4\. Canvas 뷰포트 설정
+
+스토리북 내에서 컴포넌트를 감싸는 뷰포트의 크기를 설정할 수 있다.
+
+```js
+export const parameters = {
+  actions: { argTypesRegex: "^on[A-Z].*" },
+  controls: {
+    matchers: {
+      color: /(background|color)$/i,
+      date: /Date$/,
+    },
+  },
+  viewport: {
+    viewports: {
+      mobile1: {
+        name: "iPhone 13 mini",
+        styles: {
+          width: "375px",
+          height: "812px",
+        },
+        type: "mobile",
+      },
+      mobile2: {
+        name: "iPhone 13 / 13 pro",
+        styles: {
+          width: "390px",
+          height: "844px",
+        },
+        type: "mobile",
+      },
+      tablet1: {
+        name: 'iPad Pro 11"',
+        styles: {
+          width: "834px",
+          height: "1194px",
+        },
+        type: "tablet",
+      },
+    },
+    defaultViewport: "mobile1",
+  },
+};
+```
+
+Preview.js의 parameters에 위와 같은 내용을 추가한다. 이번 경우에는 세 종류의 뷰포트를 넣어놓았고, 디폴트 값으로 피그마에서 디자인된 사이즈로 해두었다.
+
+![](https://blog.kakaocdn.net/dn/c3hH2i/btrF4Gm6fnn/x2KUDOwxz3WrP7BeilWEwK/img.gif)
+
+## 5.  스토리북 내 패딩 설정
+
+위에서 뷰포트도 디자인된 것에 맞추어서 설정해 놓았는데, 스토리북에서 기본으로 설정해놓은 마진(16px)을 우리 디자인에 맞게 수정하고 싶었다. 간단하다.
+
+```bash
+npm install --save-dev storybook-addon-paddings
+```
+
+- npm에서 storybook-addon-paddings를 설치하고
+- main.js에 가서 addon에 똑같이 'storybook-addon-paddings'를 추가해준다.
+
+![](https://blog.kakaocdn.net/dn/c3hH2i/btrF4Gm6fnn/x2KUDOwxz3WrP7BeilWEwK/img.gif)
+
+## 6\.  github Action으로 배포 설정하기
+
+제작한 UI컴포넌트들을 스토리북을 통해 문서화해 공유하기에 좋은 방법이다. 디자이너 입장에서는 내가 열심히 디자인한 컴포넌트들이 잘 구현되고 있는지 감시할 수 있다!! github Action을 이용해 push 액션이 오면 자동으로 깃허브 페이지에 배포를 하려고 한다. [배포 링크](https://bankidz.github.io/bankidz-client/)
+
+```bash
+npm i @storybook/storybook-deployer --save-dev
+```
+
+- npm에서 storybook-deployer를 설치하고
+- package.json에 가서 scripts에 `deploy-storybook": "storybook-to-ghpages` 를 추가해준다.
+
+```yaml filename="deploy.yml"
+name: Build & Deploy Storybook
+on:
+  push:
+    branches: [dev]
+    paths: ["src/components/**"]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install and Build 🔧
+        # This needs an Acces Token stored as "GH_TOKEN" 👇
+        run: |
+          npm install
+          npm run deploy-storybook -- --ci
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+```
+
+깃허브 워크플로우 디렉토리에 .yml 파일을 하나 만들어준다.
+
+dev 브랜치에 push가 오고, 'src/components' 디렉토리에 변경사항이 있을 때 액션이 실행된다.
+
+처음 스토리북을 설치하면 자동으로 생기는 예제 파일들 중에 .mdx 파일이 들어있는데, 이 때문에 배포 중에 에러가 났다. 로컬에선 문제없이 빌드가 되는데 깃허브 액션을 통해 빌드할때만 문제가 생겼다. **@mdx-js/react** 를 설치해주고 다시 push를 날려보니 빌드가 정상적으로 되는것을 확인했다.
+
+[참고1](https://devnm.tistory.com/4) [참고2](https://github.com/storybookjs/storybook-deployer#readme) [참고3](https://zeddios.tistory.com/1047)
+
+그리고 이전에 스토리북을 사용했던 [후기](https://9yujin.tistory.com/25?category=1025360)

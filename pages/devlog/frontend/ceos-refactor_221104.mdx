@@ -1,0 +1,374 @@
+import { Img } from "components";
+
+# [React] 다시 만드는 React-Messenger (selectorFamily, FaCC)
+
+_2022.11.04_
+
+세오스 리액트 메신저 과제를 준비하면서 6개월 전에 제출했던 과제를 다시 보았다. 시간에 쫓겨가면서 하다보니, 굉장히 더러운 부분이 꽤 있다. 이런저런 기능을 추가하면서 이런저런 옵션과 props가 들어가게 되고, 그렇게 몬스터 컴포넌트가 되어간다. 스타일링을 할때도 원하는 대로 될때까지 수정에 수정을 거듭하다보니 매우 복잡해졌다. 그래서 이번 포스팅은 6개월 전 과제물 리팩토링의 기록!
+
+- Recoil selectorFamily
+- 커스텀훅을 이용해 로직 추상화
+- Funtion as Child Component
+- 타입 가드
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2F7w1CO%2FbtrQmRLsfUV%2Ff5uy4IFktvem7MmYar7vck%2Fimg.png)
+_인제 생각해보니,_
+
+## 1\. 네이밍
+
+제일 시급했다. 계속 기능을 추가하면서 급급하게 변수를 만들어갔다. Room, chats, chatList 등의 이름이 별다른 기준 없이 사용되는게 스스로도 감당하기 힘들 정도였다. 개인프로젝트임에도 네이밍은 꽤 중요하다..!
+
+<Img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fc6n5HZ%2FbtrQlq10Ap5%2FQKKVEOlkMvek5cBRRzIAsK%2Fimg.png" />
+*💩*
+
+위 사진이 바로 그 단적인 예다. atom의 이름은 'chatState'인데 key는 'chats'. 심지어 타입은 'RoomType'의 배열이다. 뭐 이런 쓰레기같은 코드가 있을 수가. 최대한 명확히 기준을 잡고 타입과 상태들의 이름부터 지었다.
+
+```ts
+export interface IChat {
+  userId: number;
+  content: string;
+  date: string;
+  like: boolean;
+  chatId: string;
+}
+export interface IChatting {
+  chattingId: number;
+  userIdList: number[];
+  chatList: IChat[];
+}
+
+export interface IUser {
+  userId: number;
+  userName: string;
+  profileImage: string;
+  statusMessage: string;
+}
+```
+
+챗 하나하나는 `IChat`, 채팅방 관련 타입은 `IChatting`.
+
+Chatting의 chatList에는 `IChat`형태의 배열이 들어간다.
+
+```ts
+import chattingsData from "../mocks/chattingsData.json";
+import userData from "../mocks/userData.json";
+import friendsData from "../mocks/friendsData.json";
+
+export const chattingsState = atom<IChatting[]>({
+  key: "chattings",
+  default: chattingsData.chattings,
+});
+
+export const userState = atom<IUser>({
+  key: "user",
+  default: userData.users[0],
+});
+
+export const friendsState = atom<IUser[]>({
+  key: "friends",
+  default: friendsData.users,
+});
+```
+
+기본 atom에는 `key + State` 형식으로 이름을 붙인다. 내 정보(user)와 친구정보(friends)를 분리해주었다.
+
+채팅목록은 Chattings, 각 채팅방들은 Room이라는 네이밍. Chattings를 `map`으로 돌려서 리스트를 렌더링해주는데, map의 첫번째 인자로 chatting이라는 이름을 사용해주었다. Room과 chatting 두 이름을 모두 쓰는 것에 대해서 고민을 꽤 했었다. Room은 컴포넌트 이름, chatting은 상태의 이름으로 생각하고 지금과 같이 작성했다.
+
+## 2\. 리코일 활용하기 (selectorFamily)
+
+먼저, 문서에서는 `Selector`를 이렇게 설명한다.
+
+> Selector는 파생된 상태(derived state)의 일부를 나타낸다. 파생된 상태를 어떤 방법으로든 주어진 상태를 수정하는 순수 함수에 전달된 상태의 결과물로 생각할 수 있다.
+
+라고 하는데.. 크게 와닿지는 않다. 파생된 상태를 가져온다(get)는건, atom을 곧대로 가져오는게 아니라 원하는대로 가공해서 가져올 수 있다는 것 - 이라고 이해했다. SQL에서 `SELECT`문을 이용해 데이터베이스에서 원하는 값을 추출하는 것과 비슷하다. 그뿐만 아니라 SQL의 aggregate함수처럼 계산된 값을 받아올 수 있다.
+
+`SelectorFamily`는 `Selector`와 비슷한 패턴이지만, `get`과 `set`의 콜백에 인자를 전달할 수 있다.
+
+```ts filename="atoms/user.ts"
+export const userStateByUserId = selectorFamily<IUser, number>({
+  key: "userByUserId",
+  get:
+    (userId: number) =>
+    ({ get }) => {
+      const user = get(userState);
+      const friends = get(friendsState);
+      if (userId === 0) {
+        return user;
+      } else {
+        return friends.filter((friend) => friend.userId === userId)[0];
+      }
+    },
+});
+
+export const usersStateByUserIdList = selectorFamily<IUser[], number[]>({
+  key: "usersByUserIdList",
+  get:
+    (userIdList: number[]) =>
+    ({ get }) => {
+      return userIdList.map((userId) => get(userStateByUserId(userId)));
+    },
+});
+```
+
+간단하게 이런식으로 사용할 수 있다. userId를 인자로 받아 해당 유저의 정보만 가져오는 selector와 (그 selector를 사용하는) userId의 배열을 인자로 받아 유저들의 정보를 가져오는 selector이다.
+
+get 내에서 다른 atom의 상태를 참조할 수 있다. 내 정보와 친구 정보가 다른 atom으로 분리되어 있는데,하나의 selector에서 모두 불러와 리턴하도록 했다.
+
+#### 2.1 selector에서 set 사용하기
+
+```ts
+export const chattingStateByChattingId = selectorFamily<IChatting, number>({
+  key: "chattingByChattingId",
+  get:
+    (chattingId: number) =>
+    ({ get }) =>
+      get(chattingsState).filter(
+        (chatting) => chatting.chattingId === chattingId
+      )[0],
+  set:
+    (chattingId: number) =>
+    ({ set }, newChatting) => {
+      set(chattingsState, (prev) =>
+        prev.map((chatting) =>
+          chatting.chattingId === chattingId
+            ? (newChatting as IChatting)
+            : chatting
+        )
+      );
+    },
+});
+```
+
+`get`만 있을 땐 readonly한 함수만 제공하지만 `set`을 활용한다면 selector에서 상태를 변경하는 함수도 쓸 수 있다. 그냥 `useRecoilState`를 사용하는 것 처럼. 챗을 보내는 기능도 `selectorFamily` 안에서 구현해보았다. 해당하는 채팅방의 id와 newChatting을 인자로 보낸다. 어떤 식으로 보내야 하지??
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fbz0P4U%2FbtrQlIIemZY%2F6fjtRyXe7YJ3Twm9AhRIUk%2Fimg.png)
+*https://recoiljs.org/docs/api-reference/utils/selectorFamily/*
+
+set 속성에는 위의 타입의 함수가 들어갈 수 있다. 정리하면 `P => ({set}, newValue) => void;` 의 형태이다. 세터와 새로운 값을 인자로 보낸다. 위에 중첩된 함수의 인자는 `selectorFamily`의 인자이다.
+
+```ts filename="useChat.ts"
+const useChat = (chattingId: number) => {
+  const currentId = useRecoilValue(currentState);
+  const [chatting, setChatting] = useRecoilState(
+    chattingStateByChattingId(chattingId)
+  );
+
+  const sendChat = (value: string) => {
+    if (value.length !== 0 && value.replace(/ /g, "").length !== 0) {
+      const newChat: IChat = {
+        userId: currentId,
+        content: value,
+        date: dayjs().format(),
+        like: false,
+        chatId: uuid(),
+      };
+
+      setChatting({ ...chatting, chatList: [...chatting.chatList, newChat] });
+    }
+  };
+
+  return { sendChat };
+};
+
+export default useChat;
+```
+
+컴포넌트에서는 이렇게 사용할 수 있다.
+
+`useRecoilState(chattingStateByChattingId(chattingId));`
+
+## 3\. 커스텀훅으로 로직 분리
+
+컴포넌트 내에서 UI 렌더링을 담당하는 부분과 비즈니스 로직을 최대한 분리하는데에 관심이 있다. 이러한 관심사의 분리의 중요성을 다루는 아티클들이 꽤 많았다. 조금 더 선언적인 코드를 통해 컴포넌트가 어떤 일을 하는지 명확하게 알 수 있고, 변경이 잦은 UI 컴포넌트와 데이터를 다루는 로직을 분리함으로서 변경에 용이한 좋은 코드가 될 수 있다. 대체로 이런 이야기를 적어놓았다.
+
+바로 위에서 작성했던 useChat이 그 분리된 로직이다.
+
+```tsx filename="roomFooter.tsx"
+const RoomFooter = ({ chattingId }: { chattingId: number }) => {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { value, onChange, resetValue } = useInput("");
+  const { sendChat } = useChat(chattingId);
+
+  const focusInput = () => inputRef.current?.focus();
+
+  useEffect(() => {
+    focusInput();
+  }, []);
+
+  const handleSendChat = () => {
+    sendChat(value);
+    resetValue();
+    focusInput();
+  };
+
+  const onEnter = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      if (e.nativeEvent.isComposing === false) {
+        e.preventDefault();
+        handleSendChat();
+      }
+    }
+  };
+
+  return (
+    <Wrapper>
+      <div>
+        <MessageInput
+          value={value}
+          onChange={onChange}
+          ref={inputRef}
+          onKeyDown={onEnter}
+        />
+        <SendButton
+          onClick={handleSendChat}
+          disabled={value.length === 0 ? true : false}
+        >
+          전송
+        </SendButton>
+      </div>
+    </Wrapper>
+  );
+};
+
+export default RoomFooter;
+```
+
+아직 좋은 코드라고 말하긴 뭐하지만, UI를 다루는 로직만 남아있고 상태를 다루는 로직은 전부 커스텀훅으로 추상화되어 있도록 했다.  
+이외에도 스크롤 위치를 다루는 로직 등을 커스텀훅으로 빼버리면서 컴포넌트를 더 간결하게 만들 수 있다.
+
+#### 3.1 리렌더링 문제?
+
+원래는 커스텀훅을 이용해 각 하나의 atom을 제어하는 함수들을 모아놓고 컴포넌트에서 불러와 사용했었다. 그 컴포넌트에선 사용하지 않지만 훅에서 구독하고있는 다른 상태가 변경될때마다 불필요한 상황에서도 리렌더링되는 경우가 있었다.
+
+예를들어 chatting atom에 있는 userIdList로 user 정보를 가져오기 위해서는, chattings와 friends 모두를 구독하고 있어야 했다. user 정보를 가져오는 로직이기 때문에 `useUsers`라는 훅에 만들고 반환했었다. 문제는 단순히 users 상태를 가져오기 위해서 `useUsers` 훅을 사용하는 컴포넌트에서 생겼다. 해당 컴포넌트에서는 chattings 상태에 관심이 없지만, useUsers 훅에서 chattings를 구독하고 있기 때문에 그 상태가 변경될때마다 쓸데없는 리렌더링이 일어나는 것이다.
+
+이런 문제를 해결하기 위해서 리코일의 `selectorFamily`를 더 적극적으로 사용하게 되었다. 각각의 로직을 `selector` 내에서 처리할 수 있게 되면서 불필요한 렌더링을 막을 수 있었다.
+
+## 4\. Function as Child Component
+
+채팅목록과 친구목록의 item을 같은 컴포넌트를 재사용하려고 했다. 저번 과제에는 ListItem 컴포넌트 하나를 사용하는 RoomListItem, FriendsListItem 두 컴포넌트를 만들어 사용했다. 상위 컴포넌트를 하나 두고 상태를 가공해서 props으로 넘겨주어야 하기 때문이었다 (동일한 ListItemProps 타입의 props를 넘겨주어야 했는데, 각 페이지에서 갖고 있는 상태는 users와 chattings로 다르다). 되려 불필요하게 코드가 분리되어서 오히려 불편해지는 감이 있었다.
+
+![](https://blog.kakaocdn.net/dn/JyU1Q/btrQr6u1kze/HLVkPsUFHPfRpy0R4CkvzK/img.gif)
+_기존 과제 코드. 번거롭게 자식 컴포넌트로 타고 타고 넘어가야 하는 느낌_
+
+이번 과제에서는 같은 파일 내에서 작성하되 ListItem 컴포넌트를 재사용할 수 있는 방법을 고민해보았다. Function as Child Component 라는 패턴을 적용했다. Headless 컴포넌트의 일종으로, 상태는 제어하지만 스타일링은 담당하지 않는 컴포넌트를 말한다.
+
+```tsx filename="Friends.tsx"
+const Friends = () => {
+  const friends = useRecoilValue(friendsState);
+  const me = useRecoilValue(userState);
+
+  return (
+    <Wrapper>
+      {/* ...생략 */}
+      <MyProfile>
+        <Squircle imageUrl={me.profileImage} selected={false} size={55} />
+        <div>{me.userName}</div>
+      </MyProfile>
+      <Divider />
+      <SubHeading>친구 {friends.length}</SubHeading>
+      {friends.map((friend) => (
+        <FriendListHeadless friend={friend} key={friend.userId}>
+          {({ friend, handleClickListItem }) => (
+            <ListItem data={friend} handleClickListItem={handleClickListItem} />
+          )}
+        </FriendListHeadless>
+      ))}
+    </Wrapper>
+  );
+};
+
+export default Friends;
+```
+
+friends 배열을 `map`으로 돌려 하나씩 아이템을 렌더링한다. 특이한건 반환하고 있는 컴포넌트의 모양이다.
+
+`<FriendListHeadless />` 라는 컴포넌트의 child에는 또다른 컴포넌트(ListItem)을 반환하는 함수가 들어간다. 그 함수는 friend 객체와 클릭이벤트 시 실행될 함수를 인자로 받아 ListItem의 props으로 집어넣는 형태이다.
+
+```tsx filename="FriendListHeadless.tsx"
+interface FriendListHeadlessProps {
+  friend: IUser;
+  children: (args: any) => JSX.Element;
+}
+
+const FriendListHeadless = ({ friend, children }: FriendListHeadlessProps) => {
+  const navigate = useNavigate();
+  const chattingId = useRecoilValue(
+    chattingStateByUserId(friend.userId)
+  ).chattingId;
+
+  return children({
+    friend: friend,
+    handleClickListItem: () => navigate(`/room/${chattingId}`),
+  });
+};
+```
+
+Headless 컴포넌트 내에서 chattingId 상태를 받아온다. 해당 채팅방으로 `navigate` 하는 함수를 작성했다. 그리고 children 컴포넌트의 props으로 넘겨준다. 굳이 한 컴포넌트가 더 필요한 이유는 chattings가 아닌 각 chatting의 상태가 필요했기 때문. `map`으로 돌리고 있는 그 안에서 이루어져야했다. 번거로이 자식 컴포넌트로 타고타고 내려갈 필요 없이, Headless컴포넌트가 어떤 컴포넌트를 child로 두고있는지도 한눈에 볼 수 있는 것도 장점인 것 같다.
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2F55GvV%2FbtrQpSFgEy7%2FxAU1qOnaFR9Z4hEIXLm79k%2Fimg.png"
+  width={300}
+/>
+*친구 목록*
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbjAFxt%2FbtrQqk9aRMk%2FHzMn5UFoRt3cjneYkZk510%2Fimg.png"
+  width={300}
+/>
+*채팅 목록*
+
+#### 4.1 타입 가드
+
+또다시 마주친 고민 포인트. 똑같은 ListItem 컴포넌트의 data props로 내려오는 객체가 달라질 수 있다. 채팅목록에서는 `IChatting` 타입, 친구목록에서는 `IUser` 타입의 객체이다. 프로필이미지와 사용자 이름은 공통으로 쓰지만 `IChatting` 타입의 객체에는 userId 밖에 없기 때문에 따로 friends 상태에서 가져오는 등의 처리가 필요하다. 마지막으로 채팅목록에서는 상태메시지 대신 마지막 채팅과 그 날짜가 보여져야 한다.
+
+```ts
+const isChattingType = (data: any): data is IChatting => {
+  return data.chattingId !== undefined;
+};
+```
+
+```tsx
+// const isChatting = isChattingType(data);
+
+<InfoSub>
+  {isChatting
+    ? data.chatList[data.chatList.length - 1].content
+    : data.statusMessage}
+</InfoSub>
+```
+
+타입 가드를 통해 조건문에서 객체의 타입을 좁혀 나갈 수 있다. 단순히 어떤 인자명은 어떠한 타입이다라는 값 \(is 키워드)을 리턴하는 함수이다. 컴포넌트 내에서 타입가드 함수의 반환값을 사용할 수 있다.
+
+> 근데 이렇게 다른 도메인의 상태를 사용하는 컴포넌트들을 하나로 만드는게 좋은 코드일까..?
+>
+> 채팅목록과 유저목록 모두에서 사용할 수 있도록 디자인되어있긴 하지만, 여전히 변경이 생기면 컴포넌트를 수정해야 한다. 애초에 컴포넌트를 도메인과 완전히 분리해서 \{ profileImage, mainText, subText, time? } 등의 범용적인 props를 받도록 하면 더 좋은 컴포넌트가 되려나..?
+>
+> [변경에 유연한 컴포넌트](https://jbee.io/web/components-should-be-flexible/)
+
+## 5\. 뇌 빼고 짰던 JSX, Styled-components
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FxaqHa%2FbtrQpV2662m%2Fjo9lkEQgmPsBFOsloCfc41%2Fimg.png"
+  width={400}
+/>
+_새거 / 옛날거_
+
+JSX부터 Styled components 함수까지 뭐하나 제대로 된게 없는 코드였다. 나와 상대방의 말풍선이 서로 반대방향에 있어야했고, `(프사) - 내용 - 시간` 의 순서도 나와 상대방이 반대로 되어있다. 그리고 한명이 연속해서 채팅을 보낼때, 첫번째로 보낸 말풍선에만 꼬리가 달려 있어야 했다. 그 꼬리의 스타일도 나와 상대방이 다르다.
+
+계속해서 복잡한 조건을 하나씩 추가해가며 개발했다보니 점점 더러운 코드가 되어갔다. 이번 과제에서는 처음부터 열심히 고민하고 구성을 해보았다.
+
+1\. `flex-end`와 `flex-start`를 이용해 우측정렬 좌측정렬을 간단히 할 수 있다.
+
+2\. 요소의 순서는 flexbox에서 `order` 속성을 이용해 css 내에서 바꿀 수 있다.
+
+3\. 말풍선 꼬리같은 복잡한 스타일은 따로 함수로 분리해 넣어준다.
+
+이렇게 36줄이었던 JSX 코드를 12줄로 줄일 수 있었다. Styled component 부분은 더욱 줄어들었다. 거의 두배 가까이 간결해진 코드를 볼 수 있다.
+
+---
+
+[이번에 리팩토링한 과제 코드](https://github.com/9yujin/react-messenger-16th)와 [이전에 했던 과제 코드](https://github.com/9yujin/react-messenger-15th).
+
+똑같은 기능이더라도 계속 고민해가며 리팩토링하는 경험이 중요하다.  
+생각보다 많은 것을 얻어가는 과제였다.

@@ -62,7 +62,7 @@ export default FeedItemList;
 
 각 카테고리별 피드 컴포넌트 안에서 카테고리 안에 속하는 투두 목록들을 가지고 온다. recoil의 selector를 처음 써보았다.
 
-#### **recoil selector**
+#### recoil selector
 
 ```
 export const todoSelector = selectorFamily<ITodoItem[], string>({
@@ -78,15 +78,15 @@ selector는 순수함수이다. get함수에서는 `RecoilValueReadOnly` 객체�
 
 구현한 내용은 아래와 같다. 이번주 과제는 저번 주에 바닐라 JS로 만들었던 투두리스트를 리액트를 이용해 만들어보는 과제였다. 투두메이트에서 투두를 체크하는 부분, 그러니까 Feed 부분만 만들어보았다. 몇시간 내에 내야해서 날림으로 짠 코드라 대대적인 리팩토링이 필요하다. 특히 상태관리하는 구조를 처음부터 다시 생각해야할 것 같다.
 
-#### **투두 생성하기**
+#### 투두 생성하기
 
 ![](https://blog.kakaocdn.net/dn/cVz9DC/btrNZNYKAZX/8w9AeqFjUDRDYga6fZ1hLK/img.gif)
 
-#### **투두 체크하기 토글**
+#### 투두 체크하기 토글
 
 ![](https://blog.kakaocdn.net/dn/tePqL/btrNZGZG0BV/bJYknjg5Xoy1FwuP0Tbu71/img.gif)
 
-#### **투두 삭제하기**
+#### 투두 삭제하기
 
 ![](https://blog.kakaocdn.net/dn/codkCv/btrNXJwPVif/M5BScJLLcGR8pFlZA9akfk/img.gif)
 

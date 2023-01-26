@@ -1,0 +1,236 @@
+import { Img } from "components";
+
+# [React] 절대경로 설정하기 (with TS, Storybook, CRA, Craco)
+
+_2022.07.11_
+
+프로젝트가 규모가 커지고 뎁스가 깊어지면서 파일을 import 해올때마다 번거로워졌다. `../`이 4개라니. 타입스크립트 리액트 환경에서 절대경로를 사용할 수 있도록 세팅을 해보았다. 이번 글은 그 삽질의 기록.
+
+```tsx
+import { useAppDispatch } from "../../../../store/app/hooks";
+import { dispatchItemName } from "../../../../store/slices/challengePayloadSlice";
+import a1 from "../../../../assets/icons/itemName/a1.svg";
+```
+
+## 1\. Craco로 config 건드리기
+
+절대경로를 사용하기 위해서는 webpack의 config를 건드려야 한다. CRA로 프로젝트를 생성했더라도 eject를 통해 config 파일을 꺼내서 수정할 수 있지만, 한번 꺼내면 다신 못돌아간다고 리드미에서 그렇게 겁을 주시니..
+
+쫄튀할 뻔한 나를 위한 **CRACO**(create react app configuration override) 라는 패키지가 있다. eject를 하지 않고도 웹팩을 건들 수 있도록 도와준다.
+
+```bash
+$ yarn add @craco/craco
+$ yarn add craco-alias -D
+```
+
+패키지를 설치해준다.
+
+#### package.json
+
+```json
+{
+  // ...
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "react-scripts eject"
+  }
+  // ...
+}
+```
+
+react-script 로 되어있던 부분을 craco가 해당 명령어를 실행하도록 변경해준다.
+
+#### craco.config.js
+
+```js
+const CracoAlias = require("craco-alias");
+
+module.exports = {
+  plugins: [
+    {
+      plugin: CracoAlias,
+      options: {
+        source: "tsconfig",
+        baseUrl: "./",
+        tsConfigPath: "./tsconfig.paths.json",
+      },
+    },
+  ],
+};
+```
+
+root 디렉토리에 `craco.config.js`이라는 이름으로 파일을 생성해준다. [craco-alias](https://www.npmjs.com/package/craco-alias)
+
+- `source` : 'options', 'jsconfig', 'tsconfig' 중 하나를 선택한다.
+- `baseUrl` : alias를 위한 base url을 설정한다.
+- `tsConfigPath` : tsconfig 파일의 경로를 넣는다. source가 'tsconfig'로 설정되어 있을 때만 필요한 옵션.
+
+## 2\. 경로 설정
+
+```bash
+ ├── .github # PR탬플릿, 액션 워크플로우 관련
+ ├── .storybook # 스토리북 세팅
+ ├── public
+ ├── src
+ │   ├── assets # 아이콘, 이미지, 폰트 파일 등
+ │   ├── components # 컴포넌트 관련 파일
+ │   │   ├── common
+ │   │   └── [...]
+ │   ├── hooks # 커스텀 훅
+ │   │   ├── api
+ │   │   ├── common
+ │   │   └── [...]
+ │   ├── lib
+ │   │   ├── api # axios 설정
+ │   │   ├── styles # GlobalStyle, ThemeProvider 관련
+ │   │   ├── types # type, interface 관련
+ │   │   └── utils # 유틸 함수 관련
+ │   ├── pages # 페이지 관련 파일
+ │   ├── store
+ │   │   ├── app # store 세팅
+ │   │   └── slices # RTK slice 파일 작성
+ │   ├── App.tsx
+ │   └── index.tsx
+ └── 각종 세팅 파일들과 리드미 파일
+```
+
+src 디렉토리 하위에 있는 디렉토리마다 alias를 지정해주었다. 현재 프로젝트 디렉토리 구조는 이렇게 되어있는데, 다른 컴포넌트에서 import할 일이 거의 없는 pages를 제외하고 나머지 다섯개 디렉토리에 적용시킬 예정.
+
+#### tsconfig.paths.json
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@assets/*": ["src/assets/*"],
+      "@components/*": ["src/components/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@lib/*": ["src/lib/*"],
+      "@store/*": ["src/store/*"]
+    }
+  }
+}
+```
+
+root 디렉토리에 `tsconfig.paths.json`이라는 이름으로 파일을 생성해준다. baseUrl에 src로 넣고 아래 path에서 src를 빼도 되지만 최대한 참고한 글 그대로..! 더 직관적으로 보여서 좋다.
+
+#### tsconfig.json
+
+```json
+{
+  "extends": "./tsconfig.paths.json",
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx"
+  },
+  "include": ["src", "src/custom.d.ts", "craco.config.js"]
+}
+```
+
+`tsconfig.json` 파일도 수정해준다. 타입스크립트 프로젝트를 컴파일하는데 필요한 루트 파일과 컴파일러 옵션을 지정해주는 파일이다.
+
+- `extends` : 다른 파일의 설정을 상속
+- `include` : 컴파일 할때 포함할 폴더나 파일
+
+각각 위에서 생성한 `tsconfig.paths.json`과 `craco.config.js` 을 추가한다. extends로 받지 않고 바로 tsconfig 내에서 작성해도 될듯?
+
+#### 어라?
+
+분명히 되야 할텐데, 계속 모듈을 찾을 수 없다는 웹팩 빌드 오류가 났다. 잠깐 당황했다가 이전의 기억을 살금살금 짚어 `yarn.lock` 을 삭제하고 yarn start 명령어로 실행하니 정상적으로 되었다.
+
+```tsx
+import { useAppDispatch } from "@store/app/hooks";
+import { dispatchItemName } from "@store/slices/challengePayloadSlice";
+import a1 from "@assets/icons/itemName/a1.svg";
+```
+
+이렇게 아주 깔끔하고 명시적으로 import할 수 있게 되었다.
+
+## 3\. Storybook에서
+
+기쁜 마음으로 스토리북에서도 되나 확인해보니 (당연히) 될 리가 있나. 스토리북에선 당연히 별도로 빌드하기 때문에 웹팩 설정을 따로 해준다.
+
+```bash
+yarn add --dev tsconfig-paths-webpack-plugin
+```
+
+위의 패키지를 설치한다. tsconfig의 paths에서 지정된 위치에 있는 모듈을 로드할때 사용한다고 문서에 써있는데 무슨 말인지는 잘 모르겠다.
+
+```js filename=".storybook/main.js"
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const path = require('path');
+
+module.exports = {
+  stories: [...],
+  addons: [...],
+  webpackFinal: async (config) => {
+    config.resolve.plugins.push(
+      new TsconfigPathsPlugin({
+        configFile: path.resolve(__dirname, '../tsconfig.json'),
+      }),
+    );
+    return config;
+  },
+  framework: '@storybook/react',
+  core: {
+    builder: '@storybook/builder-webpack5',
+  },
+};
+```
+
+`main.js` 에서 설정을 변경해준다. 해당 플러그인으로 직접 경로를 설정해서 가져오게 하는 것..?<br/>
+생각보다 오래걸렸다.
+
+[참고1](https://nykim.work/110) [참고2](https://www.howdy-mj.me/boilerplate/craco-absolute-paths-setting/) [참고3](https://velog.io/@vagabondms/ts-cra-storybook%EC%9D%84-%EC%82%AC%EC%9A%A9%ED%95%9C-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%97%90%EC%84%9C-Alias-%EC%84%A4%EC%A0%95%ED%95%98%EA%B8%B0)
+
+---
+
+#### 추가
+
+액션 로그를 보니 스토리북 배포에 에러가 나있었다. 무슨일인가 하니...
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbumKuv%2FbtrG4HEI8ox%2Fmt1kv1CuVq9k9XAMR2cK0K%2Fimg.png)
+
+위에서 설치했던 `craco`와 `react-script`의 의존성 문제였다. `peer dependencies`는 내가 다른 패키지의 특정 버전과 호환된다는 것을 뜻한다. `package.json`에선 `react-script`의 버전이 5.0.1이라고 명시되어 있는데, `craco`의 `dependency`에는 ^4.0.0이라고 명시되어 있기 때문에 오류가 발생한 것.
+
+대다수 블로그에는 저기 로그에 나와 있는 것 처럼 `--legacy-peer-deps` 옵션을 붙여서 설치를 하라고 나와 있다. 근데 사실 어제 고스락 프로젝트에서 스토리북 배포하면서 `@mdx-js/react` 패키지를 설치하는데 비슷한 에러가 있었다. 그 때 저렇게 했다가 안되서 결국 다른 방법을 찾아서 했기 때문에, 저 옵션을 넣어서 하는 방법 외에 다른걸 찾아보려 했음.
+
+npm 대신 yarn 명령어를 쓰면 되는 경우가 있다. [참고](https://www.codegrepper.com/code-examples/javascript/npm+install+could+not+resolve+peerDependencies) 로컬에서 실행할 땐 yarn을 항상 쓰기 때문에 발견하지 못했나? 그렇다기엔 터미널에 아무런 경고도 뜨지 않았는데. 흠. 미스테리다. 하지만 컴퓨터는 거짓말을 하지 않으니깐.
+
+```yaml filename="storybook.yml"
+name: Build & Deploy Storybook
+on:
+  push:
+    branches: [dev]
+    paths: ["src/components/**"]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install and Build 🔧
+        # This needs an Acces Token stored as "GH_TOKEN" 👇
+        run: |
+          yarn install
+          yarn deploy-storybook -- --ci
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+```
+
+스토리북 배포용 yml 파일을 위와 같이 수정해주었다. npm이 아니라 yarn 명령어를 사용하도록. dev로 푸쉬해서 확인해보니 배포가 성공적으로 잘된다. 물론 똑같이 버전 다르다는 경고가 뜨긴 하지만 다행이 경고 정도에서 끝이었다. 그럼 도커로 배포할때도 npm말고 yarn 으로 바꿔야되는거였다.

@@ -11,7 +11,7 @@ _2022.11.25_
 - todoItem을 유저와 날짜에 따라 별도의 상태로 관리한다.
 - 할일을 완료할 때마다 해당 날짜의 달력에 색깔과 남은 개수가 업데이트된다.
 
-## **1\. TodoItem 기능 확장**
+## 1\. TodoItem 기능 확장
 
 달력 기능 전에 먼저 투두 피드를 구현하면서 날짜를 생각하지 않고 단순하게 하나의 상태로만 관리했다. 이젠 선택한 날짜와 선택한 프로필에 따라 투두들을 관리하고 보여줘야했다. 많은 고민을 했음.
 
@@ -39,7 +39,7 @@ export const todoState = atom<ITodoItem[]>({
 
 리액트 쿼리를 사용한 상황이었다면 어떻게 했을까? \[userId, date\]를 쿼리키로 사용하지 않았을까. 각각을 별도의 상태로 캐싱하고 관리하는게 더 효율적이다. 리코일의 atomFamily 함수가 제공하는 기능이다.
 
-#### **atomFamily 도입**
+#### atomFamily 도입
 
 ```ts
 /**
@@ -57,7 +57,7 @@ atomFamily 는 동일한 형태의 atom을 생성해주는 팩토리 함수를 
 
 매개변수를 리액트 쿼리의 쿼리키와 비슷한 방식으로 사용하고 싶었다. 스트링 배열의 형태로 주고 @Key라는 네이밍을 썼다. 직관적이어서 좋다.
 
-#### **selectorFamily에서 atomFamily 상태 가져오기**
+#### selectorFamily에서 atomFamily 상태 가져오기
 
 기존 프로젝트 구조에서는 FeedItemList.tsx에서 특정 카테고리의 투두들만 가져와서 렌더링하고 있다. 이제는 특정 날짜의 특정 유저의, 특정 카테고리의 투두들을 가져와야 한다. 원래 사용하던 selectorFamily가 atomFamily의 값을 가져와서 가공할 수 있도록 수정해주었다.
 
@@ -83,7 +83,7 @@ export const todosByCategory = selectorFamily<
 
 atomFamily의 파라미터와 카테고리 라벨을 받아와서 사용한다.
 
-#### **인터페이스 만들기**
+#### 인터페이스 만들기
 
 ```ts
 export interface ITodoItemSelectorParams {
@@ -98,7 +98,7 @@ type이 아니라 interface로 만들어 사용하면, 아래와 같은 오류�
 
 type으로 바꾸어주기만 했는데 오류가 해결되었다. atomFamily param의 타입 중에서 \{\[key: string\]: SerializableParam\} 형태의 인터페이스로 구현하려했다. 저런걸 index signature라고 하는데, 타입별칭을 사용해야만 사용할 수 있는 듯 하다.
 
-#### **컴포넌트에서 사용**
+#### 컴포넌트에서 사용
 
 ```ts
 const selectedDate = useRecoilValue(selectedDateState);
@@ -113,7 +113,7 @@ const todos = useRecoilValue(
 
 FeedItemList 컴포넌트에서 위와 같이 selectorFamily 함수를 호출해 사용한다. date와 profile 상태 또한 전역으로 관리한다.
 
-## **2\. 달력 투두 아이콘 색깔 채우기**
+## 2\. 달력 투두 아이콘 색깔 채우기
 
 되게 재밌게 작업했다. 투두메이트만의 아이덴티티라고 할 수 있는 기능이다.
 

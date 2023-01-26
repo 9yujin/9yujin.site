@@ -26,6 +26,14 @@ export const articleStyle = css`
       color: var(--gray-500);
     }
 
+    //제목 간격
+    h2 {
+      margin-top: 3.5rem !important;
+    }
+    h4 {
+      margin-top: 2.5rem !important;
+    }
+
     // 게시글 내 링크 뱃지
     p > a,
     li > a,
@@ -65,11 +73,6 @@ export const articleStyle = css`
     }
     img + p:has(em) {
       margin-top: 0px !important;
-    }
-
-    // 게시글 제목 색깔
-    h1 {
-      /* color: var(--main-blue); */
     }
 
     // 게시글 날짜
@@ -123,6 +126,15 @@ export const articleStyle = css`
 
     p > img {
       margin-top: 3rem;
+    }
+
+    // 코드블럭 제목
+    [data-rehype-pretty-code-fragment] {
+      & > div:first-of-type {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-500);
+      }
     }
   }
 `;

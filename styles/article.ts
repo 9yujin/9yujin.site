@@ -16,6 +16,16 @@ export const articleStyle = css`
       border-radius: 5px;
     }
 
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-weight: 700 !important;
+    }
+    h4 {
+      color: var(--gray-500);
+    }
+
     // 게시글 내 링크 뱃지
     p > a,
     li > a,
@@ -80,10 +90,10 @@ export const articleStyle = css`
       margin-right: 2px;
       background-color: var(--gray-200) !important;
 
-      font-family: "Pretendard Variable", Pretendard, -apple-system,
-        BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
-        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+      font-family: "Pretendard", Pretendard, -apple-system, BlinkMacSystemFont,
+        system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",
+        "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol", sans-serif;
     }
 
     li {
@@ -94,7 +104,7 @@ export const articleStyle = css`
     .gridbox {
       display: grid;
       grid-template-columns: 240px auto;
-      & > div:first-child {
+      & > div:first-of-type {
         & > p {
           padding-top: 4px;
         }

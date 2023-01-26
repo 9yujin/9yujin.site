@@ -2,14 +2,14 @@
   "index": "Introduction",
   "-": {
     "type": "separator",
-    "title": "Note"
+    "title": "개발 노트"
   },
   "frontend": "Frontend",
   "others": "Others",
   "cs": "CS",
   "-2": {
     "type": "separator",
-    "title": "Activities"
+    "title": "개발 일기"
   },
   "gosrock": "고스락 티켓",
   "bankidz": "뱅키즈",

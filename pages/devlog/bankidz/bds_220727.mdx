@@ -8,7 +8,7 @@ _2022.07.27_
 
 앱 UI의 전반적인 일관성이 중요함을 정말 잘 알고 있기 때문에, 디자이너가 구상한 스타일 가이드를 개발 단계로 그대로 끌고오고자 했다. styled-components의 **ThemeProvider**와 **Storybook**으로 디자인시스템을 완성도 있게 구축할 수 있게 되었다.
 
-## **1\. ThemeProvider**
+## 1\. ThemeProvider
 
 ![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbBcXcd%2FbtrIfRMPX0x%2FvZkv3Js6DUk0cq3LLfrHWk%2Fimg.png)
 ![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcMGC7i%2FbtrH49VUgFF%2FSsD7jtEfbLLseM0coVjJN1%2Fimg.png)
@@ -25,7 +25,7 @@ context를 기본으로 하는 themeProvider를 통해 전역으로 theme을 불
 
 그 외에도 미디어쿼리, 모서리 둥글기 등을 불러와 사용한다.
 
-#### **theme.tsx**
+#### theme.tsx
 
 ```ts
 import { DefaultTheme } from "styled-components";
@@ -115,7 +115,7 @@ export const theme: DefaultTheme = {
 };
 ```
 
-## **2\. Storybook**
+## 2\. Storybook
 
 디자인시스템에는 타이포와 팔레트 뿐만 아니라 그리드시스템, 버튼, 탭바, 인풋 박스 등의 공통으로 쓰이는 컴포넌트들도 정의가 되어있다. 이전에 사용해본 경험이 있던 스토리북을 이번 프로젝트에도 도입하기로 했다. 가이드가 잘 되어 있으니 더욱 효율적으로 사용할 수 있을 것이라 기대했다.
 

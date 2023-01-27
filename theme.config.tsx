@@ -2,7 +2,7 @@ import React from "react";
 import { DocsThemeConfig } from "nextra-theme-docs";
 import { useRouter } from "next/router";
 import Gyujin from "public/icons/gyujin.svg";
-import { Comment } from "./components";
+import dynamic from "next/dynamic";
 
 const config: DocsThemeConfig = {
   useNextSeoProps() {
@@ -49,6 +49,9 @@ const config: DocsThemeConfig = {
   main: ({ children }) => {
     const displayHidden = ["/", "/devlog", "/resume", "/writings"];
     const { pathname } = useRouter();
+    const Comment = dynamic(() => import("./components/Comment"), {
+      ssr: false,
+    });
 
     if (displayHidden.includes(pathname)) {
       return <>{children}</>;

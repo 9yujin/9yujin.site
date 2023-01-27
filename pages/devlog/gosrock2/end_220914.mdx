@@ -1,0 +1,123 @@
+import { Img } from "components";
+
+# 7. 랜딩페이지, GA, QA, 런칭!
+
+_2022.09.14_
+
+벌서 고스락 티켓 회고 마지막 시리즈입니다. 분명히 '이건 적어놔야지' 했다가 까먹은게 있을텐데. (점점 기술 블로그가 일기장처럼 쓰이는것 같지만) 아주 멋진 프로젝트에 걸맞는 아주아주 멋진 공연이었습니다. 아직도 여운이 가시지 않는군요. 히. 그럼 시작해보겠습니다.
+
+---
+
+## **랜딩페이지**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FCqaOw%2FbtrL1AhFLVi%2Fp0iKThf3GkJIae1YsthKv0%2Fimg.png)
+
+[바로가기](https://gosrock.band)
+
+한번이 어렵지, 두번은 그래도 할만하다. 3월공연이라는 아주 적합한 레퍼런스가 있었기 때문에.
+
+이전과 페이지 구성에서 큰 차이는 없다. 대신 전체적으로 다크모드를 싹 걷어냈음. 검정 배경을 쓰니까 다른 색들을 사용하기가 너무 어렵다!! 디자인이 제일 힘들어. 다른 어느 페이지보다 제일 완성도가 중요한 부분이기 때문에 디테일 하나하나 챙기는게 꽤 스트레스였다. 덕분에 결과는 훨씬 이쁘게 나온 것 같아 좋다. 특히 반응형이 기깔나게 잘 뽑혀서 기분이 좋음.
+
+![](https://blog.kakaocdn.net/dn/bbtyCE/btrLYkfkxoS/KVlK87JWDWKSjTrEB1kjTK/img.gif)
+
+제일 신경 썼던 부분은 스크롤 위치에 따른 애니메이션이었다. 상단바가 스크롤을 조금 내렸을 때부터 배경이 하얗게 되도록, 오른쪽 하단 플로팅 버튼은 화면이 제일 위와 아래에 있을 땐 사라지도록.
+
+처음에는 페이지 컴포넌트에서 스크롤 이벤트를 받아 `window.scrollY` 값이 변경될때마다 state에 변경하도록 했었다. state가 바뀔때마다 전체 컴포넌트가 리렌더링되면서 애니메이션이 계속 처음부터 실행되는 참사가 있었다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fcccqpa%2FbtrL4AARPuM%2FM60Zr2nBR6Ympx8JhAd7VK%2Fimg.png)
+_요기_
+
+그래서 스크롤 높이를 받아오는 로직을 커스텀훅으로 만들어놓고, 필요한 컴포넌트에서만 재렌더링이 되도록 바꾸니 해결되었다.
+
+```tsx filename="useScroll.tsx"
+import { throttle } from "lodash";
+import { useEffect, useState } from "react";
+
+const useScroll = () => {
+  const [scrollY, setScrollY] = useState<number>(0);
+  const onScroll = throttle(() => {
+    setScrollY(window.scrollY);
+  }, 100);
+
+  useEffect(() => {
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return { scrollY };
+};
+
+export default useScroll;
+```
+
+## 구글 애널리틱스
+
+전체 사용자가 몇명인지, 조회수가 얼마나 되는지 등을 보고 싶어서 구글 애널리틱스도 달아보았다.
+
+`react-ga` 패키지를 설치해 사용한다.
+
+```tsx filename="useGAPageTraking.tsx"
+const TRACKING_ID = process.env.REACT_APP_GA_TRACKING_ID!;
+
+const useGAPageTracking = () => {
+  const location = useLocation();
+  const [initialized, setInitialized] = useState(false);
+  /* localhost는 인지 못하게  */
+  useEffect(() => {
+    if (!window.location.href.includes("localhost")) {
+      ReactGA.initialize(TRACKING_ID);
+    }
+    setInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (initialized) {
+      ReactGA.pageview(location.pathname + location.search);
+    }
+  }, [initialized, location]);
+
+  // 개발용
+  /*   useEffect(() => {
+    ReactGA.initialize(TRACKING_ID);
+    ReactGA.pageview(location.pathname + location.search);
+  }, [location]); */
+};
+
+export default useGAPageTracking;
+```
+
+위 함수를 `App.tsx`에 가져와 실행한다.
+
+구글 애널리틱스 설정은 검색하면 뭐 잘 나옴. 애널리틱스4가 아니라 '유니버설 애널리틱스 속성만 만들기'를 선택하는게 포인트. `react-ga`에서 그걸 사용하기 때문이다. 내년 7월부턴 사용 못한다고 하니.. 새로운 방법을 찾아 떠나봅시다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcQq8fd%2FbtrL4bg0BQY%2F2vykeAlHlJShmGI2ntrhXk%2Fimg.png)
+
+본인의 티켓 QR코드 페이지를 무려 22번이나 들어간 분이 있길래 확인해봤더니 22학번 친구였음. 괜히 뿌듯하다. 응원톡 페이지에 생각보다 뷰가 적어서 아쉽다. 로그인하지 않은 사용자도 들어가서 볼 수 있도록 하면 어땠을까 하는 아쉬움이 있다.
+
+## 런칭 전 QA 시간
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FmytB0%2FbtrODvdTPNe%2FBWPuwXKjvlwnmr76kLrpc1%2Fimg.png)
+
+모든 개발이 끝나고 예매오픈 삼일 전에 팀원들을 모두 모아서 두시간동안 QA하는 시간을 가졌다. 뱅키즈에선 별개의 노션 페이지를 통해서 관리했지만, 이번엔 깃허브에서 이슈를 파서 진행했다. 그만큼의 볼륨도 아니고 QA에 대응할 수 있는 인원이 나와 다른 친구 두명밖에 없었기 때문에 간단하게 이슈로 관리하는게 적당하다는 생각이었다. [해당 이슈 링크](https://github.com/Gosrock/Ticket-Front-22nd/issues/48)로 가서 확인해 볼 수 있다.
+
+QA할때마다 느끼는건데, 항상 생각보다 많이 나온다. 보통 크로스 브라우징 문제, 기기별 화면에 따른 문제가 많았다. 또는 어떤 오류를 해결하면서 나오는 또다른 오류들인 경우도 있다. 테스트 코드를 도입한다면 다른 오류를 해결하며 다른 오류가 나오는 경우를 줄일 수 있을 것 같다. 언젠가 꼭 다른 프로젝트에 도입해보고 싶다!
+
+## 서비스 소개 이미지
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FJrh6I%2FbtrLZQyhwLe%2FJOaO4DQrifLA6nYEQ9Rvck%2Fimg.png)
+
+[리드미](https://github.com/Gosrock/Ticket-Front-22nd#readme)와 소개 이미지에 저번보다 더 열을 냈다. 처음 해보는거였지만 꽤 재밌는 작업이었음. 덕분인지 에타 핫게 갔다. 감사합니다.
+
+나름 비전공자와 야매들 사이에선 안 꿀린다고(...) 잔뜩 어깨 올라간 상태였다가, 뱅키즈에서 찐 디자이너들이 해놓은거 보고 다시 원래대로 돌아왔다. 분명히 비슷하게 했는데 느껴지는 퀄리티는 하늘과 땅 차이더라. 디테일의 차이인가 싶다. 디자인이 제일 어렵다.
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FrZlFa%2FbtrLZyki2Xx%2FomWvk3c0FcjLj9jCwye8tk%2Fimg.png"
+  width={500}
+/>
+
+파비콘도 이쁘지. 전체적으로 바뀐 색상 컨셉에 맞춰서 바꿔보았다. 아주 맘에 들어요.
+
+---
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbhhsYU%2FbtrL6QXlZDs%2FTvFEAUY90BNXT7k6hMkv5k%2Fimg.png)
+
+이렇게 만들어진 티켓 예매 서비스는 공연 양일 모두 문제없이 잘 사용되었다. 21,22학번 활동기수 친구들이 고생을 많이 해주었음. 정산하고 통계내는데 그래도 큰 도움이 됐을거라고 생각한다. 이 프로젝트는 매 공연마다 지속적으로 이어졌으면 하는 바람이 있지만.. 후임자를 빨리 찾아야겠다!!

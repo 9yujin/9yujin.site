@@ -1,0 +1,87 @@
+import { Img } from "components";
+
+# 5. 코로나 대응 (기획, 디자인 수정)
+
+_2022.02.15_
+
+거의다 완성되어간다고 느낄 즈음에 기획이 대폭 수정되었다. 17-19 OB들이 진행하는 프로젝트이지만 우리 좋자고 하는게 아니라 후배들 도와주려는 목적이 크기 때문에. 코로나 거리두기 때문에 공연에 들어올 수 있는 인원수가 제한이 걸렸다. 관련해서 21학번 임원 친구들과 회의를 진행했다. 크게 두가지이다. 인당 티켓은 1매씩만 구입할 수 있고 새내기는 공짜. 그리고 새내기의 경우에는 '공연 전 소모임'을 신청할 수 있도록.
+
+보통은 처음 사귄 친구들끼리 삼삼오오 모여서 다같이 공연을 보러 왔었는데 코로나 시국에는 그러기가 어렵지 않을까 라는 의견에서 나온 기획이었다. 공연 이틀 전쯤에 예비대학처럼 새내기 몇명과 선배들 몇명이 미리 만나서 연을 맺고, 친해진 친구들끼리 공연을 올 수 있도록 하는... 잘 될지는 모르지만 꽤 좋은 아이디어라고 생각한다.
+
+**티켓을 예매하는 과정**과 **예매한 티켓을 보는 페이지**가 크게 달라졌다. 새내기 티켓이 공짜가 됐으니 1인 1매로 제한했다. 대신 친구의 티켓들을 같이 사줄 가능성이 있는 재학생, 선배의 경우를 위해 어드민 페이지에서 티켓을 따로 발급할 수 있도록 했다. 기존 기획인 '내가 예매한 티켓 리스트'를 보여주는 마이페이지도 당연히 수정되었다.
+
+## 1\. 티켓 예매 과정
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FF5wb9%2FbtrtlUrHKQK%2FCK5oNKV3M6KaFf1eJOUM81%2Fimg.png)
+
+티켓 매수를 입력받는 자리에서 매수 대신 학번을 입력받도록 했다. 그 후로 신입생과 재학생이 볼 수 있는 페이지를 분리했다. 만약 학번이 C2로 시작한다면 공연 전 소모임을 신청할 수 있는 페이지로 넘어간다. 22학번이 아니라면 기존과 동일하다. [기획 1편](https://9yujin.tistory.com/entry/%ED%8B%B0%EC%BC%93-%EC%98%88%EB%A7%A4-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-1-%EA%B8%B0%ED%9A%8D-%EB%94%94%EC%9E%90%EC%9D%B8?category=1015357)
+
+<Img
+  src="https://blog.kakaocdn.net/dn/bmfH2H/btrti24KtjV/wkklMV1qxzlX8Dp7gcQss1/img.gif"
+  width={500}
+/>
+
+피그마에서 디자인한대로 똑같이 만들어지는 화면을 볼 때 쫌 뿌듯하다. 소모임 신청 토글 ui가 맘에 든다. 은행 사이트에서 약관 동의하기 과정에서 모티브를 받았다. 구체적인 설명이 필요한 부분이기 때문에 모달창을 띄워서 정보를 보여주고 신청을 할 수 있도록 했다.
+
+신입생은 공연이 공짜라는 것을 한번 더 상기시켜주면서 마이페이지로 곧바로 이동한다.
+
+## 2\. 마이페이지
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FwyPbv%2Fbtrti2wS8Oh%2FVG5EjpFhoB9XCvrEM4YYc0%2Fimg.png)
+
+왼쪽은 기존, 오른쪽은 새로 바뀐 페이지이다. 아이폰 위젯같은 느낌을 주고 싶었다. 마이페이지 이전보다 더 많은 정보를 넣을 수 있게 되어서 예매일 정보를 따로 뺐다. 새내기는 입금정보가 필요 없고 재학생은 소모임 정보가 필요 없기 때문에 그 부분을 각각 다르게 넣어주었다.
+
+이전부터 공연장 정보를 넣고 싶어도 마땅한 아이디어가 없어서 고민하고 있었는데, 마침 딱 맞는 공간이 생겨서 담았다. 좋다. 흰색 버튼이 버튼같이 안생겼다는 피드백이 있었다. 이전보다 훨신 더 버튼처럼 보인다 이제.
+
+<Img
+  src="https://blog.kakaocdn.net/dn/bWdk35/btrtlnA0iP7/yiF00QpucETAixSrfngDl0/img.gif"
+  width={500}
+/>
+
+위젯의 크기에 맞게 폰트의 크기가 맞아야 이뻤다. font-size를 vw 단위로 주니까 나름 만족스럽게 나왔다. 이미 정해놓은 레이아웃 그리드 높이 때문에 넓은 화면에선 정사각형 위젯을 사용할 수 없었다. 아쉬운대로 높이는 고정하고 너비만 늘려주었다.
+
+```jsx filename="Title.jsx"
+import React from 'react';
+
+const Tile = ({ children, color, ...props }) => {
+  return (
+    <div className="mypage-square" style={{ backgroundColor: `${color}` }}>
+      <div className="mypage-inner">
+        <div className="mypage-content" {...props}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Tile;
+
+
+
+//Tile.css
+.mypage-square {
+  width: 100%;
+  border-radius: 22px;
+  position: relative;
+}
+.mypage-square:after {
+  content: '';
+  display: block;
+  padding-bottom: 100%;
+}
+.mypage-inner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.mypage-content {
+  height: 76%;
+  width: 76%;
+  padding: 12%;
+}
+```
+
+반응형 정사각형 모양으로 고정하는게 생각보다 까다로웠다. `after` 가상 선택자가 여기저기서 요긴하게 쓰인다. 조금 더 연습해봐야겠다. 정사각형 하나 때문에 코드가 길어져 읽기 힘든 느낌이 있다. 컴포넌트로 따로 뺀 후에 안의 내용을 children으로 넘겨주었다.
+
+props를 스프레드 연산자를 이용해 넘겨주고, 원하는 위치에서 `{...props}` 형태로 받아 사용할 수 있도록 하는 건 프로젝트를 하면서 배운 것들 중 하나이다. 좋은 방식은 아닌 것 같긴 하지만 편하게 쓸 수 있겠다.

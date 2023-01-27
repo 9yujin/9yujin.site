@@ -1,0 +1,103 @@
+import { Img } from "components";
+
+# 7. 마무리
+
+_2022.02.22_
+
+프로젝트가 벌써 마무리 단계에 있다. 21학번 메인 기수 친구들이 만들고 있는 학회 홍보물에 같이 껴서 뿌려질 계획이다. 그 친구들과 시간을 맞춰서 개발을 진행해왔다. 세세한 문구들을 마지막으로 다듬었고 테스트용으로 넣어놓은 것들, 콘솔.로그들, 등등을 지우고 마무리할 준비를 끝냈다. 두둥.
+
+## **메인 랜딩 페이지**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2F2C7gD%2Fbtrt3gtg279%2FK4Ab5UbuLjGKBiAeH6AZZ1%2Fimg.png)
+
+​메인 랜딩 페이지 디자인은 좀 급하게 끝났다. 세로로 긴 형태의 카드뉴스(?)는 많이 만들어봤지만 데스크톱 원페이지 웹사이트는 처음이라.. 생각보다 생각해야할게 많더라. 스크롤 애니메이션은 주안이형이 맡아서 이쁘게 잘 해주었다. 큰 이미지는 [여기서](https://www.figma.com/file/J6HVLxWGuCFgAQUCdWBUsT/%EA%B3%A0%EC%8A%A4%EB%9D%BD-%ED%8B%B0%EC%BC%93%EC%98%88%EB%A7%A4?node-id=1434%3A13934) 볼 수 있다. (피그마)
+
+구현을 하면서 기존 디자인과 달라진 부분들이 많다. 피그마에서 한 디자인과 실제로 한 것과 뭔지 모르게 다른게 있더라. 계속 더 이쁘고 자연스럽게 보이도록 수정하면서 했다. 무엇보다 반응형이 자연스럽게 되도록 노력을 많이 했다. 화면 너비에 따라 보여지는 글의 줄바꿈이 달라졌으면 했다. [react-responsive](https://www.npmjs.com/package/react-responsive) 라이브러리를 이용하면 리액트 컴포넌트 안에서 미디어쿼리에 따라 다르게 렌더링을 할 수 있다.  
+​
+
+![](https://blog.kakaocdn.net/dn/caW1uB/btrt3fVs5CJ/Nk1ZDgwLYb4hSSQRpZtxpk/img.gif)
+
+자잘한 완성도를 높이는데 주력했다. 덕분에 나름 괜찮은 페이지가 나온 것 같다.  
+​
+
+<Img
+  src="https://blog.kakaocdn.net/dn/PKXjG/btrtYULiStY/v3Yzsu0wfCsuFm4n8d3JdK/img.gif"
+  width={500}
+/>
+
+헤더의 'gosrock'을 클릭하면 스크롤 최상단으로 이동하도록 했었다. 보통은 오른쪽 하단에 두긴 하지만 이런 버튼을 'back to top' 또는 'scroll to top' 버튼이라고 부른다. 우리 동아리 구호의 '정상을 향하여!'를 영어로 '**Toward the Top**' 라고 하는데, 말이 비슷하다는 점에서 한번 재미를 넣어보았다. 뜻이 통하는 말장난. 아주 센스있는 아이디어였다고 자찬을 해본다.
+
+```css
+html {
+  scroll-behavior: smooth;
+}
+```
+
+`scroll-behavior: smooth` 속성은 같은 페이지 내에서 이동할 때 스크롤의 움직임을 부드럽게 해준다.  
+​
+
+## OG태그, 파비콘
+
+예매 링크를 뿌릴 때 보여질 부분도 신경 써야 했다. og 태그와 파비콘을 바꾸어 주었다.
+
+```jsx
+    <meta property="og:title" content="고스락 티켓" />
+    <meta
+      property="og:description"
+      content="3월 10일 오후 7시, 합정 라디오 가가 라이브홀에서 만나요!"
+    />
+    <meta property="og:image" content="%PUBLIC_URL%/og.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
+```
+
+public 디렉토리에 있는 파일을 `index.html` 에서 위와 같은 방식으로 접근할 수 있다. `apple-touch-icon` 로 아이폰에서 웹사이트를 '홈 화면에 추가' 했을 때 보이는 아이콘을 설정할 수 있다.
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FQV9iH%2Fbtrt5ytcJAJ%2Fqz2tC2nyRwN17xxzHCbHAk%2Fimg.jpg"
+  width={400}
+/>
+
+생각보다 뜨거운 반응.. 가성비 좋다.
+
+<Img
+  src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FPlReY%2FbtrtZ7KiVoO%2FXok47Lybzu4jfbAlmCxqkK%2Fimg.png"
+  width={400}
+/>
+
+파비콘 고민을 좀 많이 했다. 그냥 고스락 로고를 넣자니 너무 자잘자잘하게 생겨서 별로 안이뻤다. 보통 다른 사이트들의 경우를 보니까 큼직큼직한 로고 혹은 대표 이니셜 한 자만 박았더라. 갖고 있는 로고 중 한글로 된 '고스락'에서 '**락**' 부분만 잘라서 만들었다. 개인적으로 한글로 된 디자인을 좋아한다. 영어보다 훨신 멋있고 간지난다고!!
+
+## **리드미**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fb3hXFM%2Fbtrt5x169Ka%2Fdxqpzk9GY8O9QMWt9ry9Tk%2Fimg.png)
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fbafzrw%2Fbtrt1KOZnqe%2F6cbDRFYGydxQWSutakkaz1%2Fimg.png)
+_피그마 디자인_
+
+[리드미](https://github.com/Gosrock/Ticket-Front#readme)를 작성하면서 디자인도 정리하고 스타일 가이드 비슷하게도 꾸며봤다. 재밌다. 지금까지 해왔던 포스터나, 영상 디자인과는 약간 다른 계열 같지만 훨신 내 취향.  
+​  
+개발자의 관점에서 UI/UX 디자인을 하다보니 편한 점이 꽤 있다. 디자인 단계에서부터 조금 더 컴포넌트적으로 생각하게 된다. 결과적으로 개발할 때도 훨신 수월하게 재활용할 수 있었다. 물론 스토리북을 도입한게 완전 짱..  
+​
+
+곧 있을 공연에서 실제로 서비스를 사용할 생각하니까 벌써 좋다. 이제 남은건 공연..만 잘하면 된다ㅋㅋ 하쒸. 연습하러 갑니다.
+
+---
+
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    margin: "20px 0",
+    position: "relative",
+    width: "100%",
+  }}
+>
+  <iframe
+    src="https://www.youtube.com/embed/NSbxkBa9bUQ"
+    width="100%"
+    height="100%"
+    frameborder="0"
+    allowfullscreen="true"
+  ></iframe>
+</div>
+
+개멋있지...

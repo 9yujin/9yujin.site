@@ -1,0 +1,196 @@
+import { Img } from "components";
+
+# 3. 모달 전역으로 관리하기 with TypeScript
+
+_2022.08.10_
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbGD0WG%2FbtrJANQdLQm%2F5I6hI0qjKuyI9Y4E6ROkcK%2Fimg.png)
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbhTNFL%2FbtrJwYyZmoD%2FKtc7ZuZu0qiw8Gd5seuaAK%2Fimg.png)
+
+앱의 다양한 페이지에서 모달을 사용한다. 그리고 미리 지정되지 않은 오류에 대해서도 캐치해서 모달을 띄우도록 되어있다. 그렇기 때문에 모달을 전역으로 관리해서 사용해보기로. 뱅키즈와 비슷하게 사용하지만 조금은 다른 방식이다. [참고](https://opensource.com/article/21/5/global-modals-react)
+
+---
+
+6개월 전, 1차 프로젝트 중에 짰던 코드이다.
+
+```tsx
+import React from "react";
+
+const ModalComponent = ({ children }, ref) => {
+  return (
+    <div className="modal hidden" ref={ref}>
+      <div
+        className="modal-overlay"
+        onClick={() => {
+          ref.current.classList.add("hidden");
+        }}
+      ></div>
+      <div className="modal-content">{children}</div>
+    </div>
+  );
+};
+
+export default React.forwardRef(ModalComponent);
+```
+
+이렇게 모달 컴포넌트를 만들어놓고,
+
+```tsx
+function TicketCodePage({ ...props }) {
+
+  const modalRef = useRef();
+  const onClick={() => {
+    modalRef.current.classList.remove('hidden');
+  }}
+// ...
+  return (
+    <TicketWrapContainer>
+    // ...
+        <ModalComponent ref={modalRef}>
+          <ModalBox
+            onClickClose={() => {
+              modalRef.current.classList.add('hidden');
+            }}
+          />
+        </ModalComponent>
+    </TicketWrapContainer>
+  );
+}
+
+export default TicketCodePage;
+```
+
+모달이 필요한 페이지마다 모달 컴포넌트를 달아준다. `ref`로 div요소를 가져와서 직접 class를 바꿔가며 display 속성을 바꿔주는 형식이었다. 무엇보다 이게 제일 맘에 안들었음. 또 모달을 사용하는 타입마다 똑같은 코드를 여러번 작성해야 하는데, 이 부분도 지정된 타입으로 관리를 하고 싶었다. 다음과 같은 타입들이 있다.
+
+- 응원톡을 남기기 전 이름과 내용을 확인하고 전송
+- 소켓 응답을 받고 난 후 에러 처리
+- API 요청의 응답을 받고 난 후 에러 처리
+- 공연장 정보, 개발자 소개 등의 별도 페이지로 빼지 않는 정보
+
+모달을 전역으로 관리하면 각 컴포넌트에서 매번 모달을 임포트해서 넣어줄 필요가 없어진다.
+
+---
+
+#### GlobalModal.tsx
+
+```tsx
+export const MODAL_TYPES = {
+  Notice: "Notice",
+  CheckBeforeSend: "CheckBeforeSend",
+  Location: "Location",
+  Developers: "Developers",
+} as const;
+
+const ModalComponents: any = {
+  [MODAL_TYPES.Notice]: Notice,
+  [MODAL_TYPES.CheckBeforeSend]: CheckBeforeSend,
+  [MODAL_TYPES.Location]: Location,
+  [MODAL_TYPES.Developers]: Developers,
+};
+
+const GlobalModal = () => {
+  const [modal, setModal] = useRecoilState(modalState);
+  const { modalType, modalProps } = modal || {};
+  const renderComponent = () => {
+    if (!modalType) {
+      return null;
+    }
+    const ModalComponent = ModalComponents[modalType];
+
+    return (
+      <Modal>
+        <Overlay onClick={() => setModal(null)} />
+        <Container>
+          <ModalComponent {...modalProps} />
+        </Container>
+      </Modal>
+    );
+  };
+  return <>{renderComponent()}</>;
+};
+
+export default GlobalModal;
+```
+
+먼저 `GlobalModal` 컴포넌트를 만들어 최상위\(내 경우엔 index.tsx)에 넣어둔다. `styled-component`를 사용한 코드이다. 중요하게 봐야할 곳은 리코일에 모달 상태를 저장하는 것과, GobalModal에서 보여줄 모달의 종류들을 코드와 같이 ModalTypes 객체로 관리하는 것 - 두 군데이다. ModalTypes 에서는 각 모달의 타입을 문자열로 갖고 있다가 ModalCompoents에서 각 타입의 값을 키로 하는 객체로 모달 컴포넌트 자체를 관리한다. 리코일 상태에 저장해둔 값이 있을 땐 해당 모달을 렌더링하고, 상태를 `null`로 바꾸면 `renderComponent()`에서 `null`을 리턴하므로 아무것도 렌더링하지 않는다!
+
+#### stores/modal.ts
+
+```ts
+import { atom } from "recoil";
+import { MODAL_TYPES } from "../components/modal/GlobalModal";
+
+export type TNoticeModal = {
+  modalType: typeof MODAL_TYPES.Notice;
+  modalProps: any;
+};
+
+export type TCheckBeforeSendModal = {
+  modalType: typeof MODAL_TYPES.CheckBeforeSend;
+  modalProps: any;
+};
+
+export type TLocationModal = {
+  modalType: typeof MODAL_TYPES.Location;
+  modalProps: any;
+};
+
+export type TDevelopersModal = {
+  modalType: typeof MODAL_TYPES.Developers;
+  modalProps: any;
+};
+
+export type ModalType =
+  | TNoticeModal
+  | TCheckBeforeSendModal
+  | TLocationModal
+  | TDevelopersModal;
+export const modalState = atom<ModalType | null>({
+  key: "modalState",
+  default: null,
+});
+```
+
+ModalState에는 두가지 정보가 들어간다. 어떤 종류의 모달이 들어갈지, 그리고 해당 모달 컴포넌트에 들어갈 props. 컴포넌트 자체를 바로 쓰지 않고 `MODAL_TYPES`를 중간에 두어 렌더링하는데의 이유가 여기에 있다. 리코일 상태에는 JSX 요소를 담을 수 없다. 뱅키즈에서 사용하는 리덕스도 똑같은 이유 때문에 따로 `context api`를 사용했는데, 이 방법을 사용하면 됐었다!!
+
+#### useModal.tsx
+
+```tsx
+const useModal = () => {
+  const [modal, setModal] = useRecoilState(modalState);
+
+  const openModal = ({ modalType, modalProps }: ModalType) => {
+    setModal({ modalType, modalProps });
+  };
+
+  const closeModal = () => {
+    setModal(null);
+  };
+
+  return { openModal, closeModal };
+};
+
+export default useModal;
+```
+
+모달을 열고 닫는 함수를 커스텀훅을 통해 추상화해서 쓰고 있다.
+
+---
+
+```ts
+openModal({
+  modalType: "CheckBeforeSend",
+  modalProps: {
+    onClick: () => {
+      mutate({ nickName, content });
+      closeModal();
+      console.log("asdf");
+    },
+    closeModal,
+    content,
+    nickName,
+  },
+});
+```
+
+모달이 필요한 곳에서 이렇게 `openModal` 함수를 쓸 수 있다.

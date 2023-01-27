@@ -1,0 +1,71 @@
+import { Img } from "components";
+
+# 2. CDD, Storybook
+
+_2022.02.01_
+
+기획단계에서부터 컴포넌트의 재사용을 염두에 두고 페이지들을 꾸리고 디자인했다. 모든 페이지들의 레이아웃과 컴포넌트들이 일관성을 유지하는게 제일 중요하다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fbl9sHi%2Fbtrr9zBrXau%2Fl4DgH1jwpK1fIt9AOdvum1%2Fimg.png)
+
+기획한 페이지들의 일부이다. 제목과 설명, 인풋창, 버튼 등이 모두 재활용될 수 있는 컴포넌트들이다. 세부적인 것들 (글의 내용, 인풋의 placeholder와 오른쪽에 있는 인디케이터, 버튼의 내용과 색깔, 동그란 테두리 유무 등등) 만 바꾸고 모든 코드를 재활용할 것을 염두에 두고 디자인했다.
+
+개발로 들어가려니까 막막한 구석이 있었다. 처음으로 하는 협업이었고 어떻게 작업을 나누어야 할지 고민이 많았다. 페이지 단위로 나누면 컴포넌트들의 재사용이 어렵다는 단점이 있었다.
+
+그래서 디자인 시스템이라는 것이 사용된다. **디자인 시스템**은 **스타일 가이드**나 **컴포넌트** 라이브러리 등을 포함한다. 구글이나 에어비엔비 같은 기업들은 독자적인 디자인 시스템을 만들어 사용하고 있다. 우리가 자주 사용하는 Meterial Design이 가장 대표적인 예이다.
+
+**컴포넌트 단위**로 개별적으로 만들고, 이를 **문서화**해서 보여준다. 만들어진 컴포넌트를 각 페이지에서 불러와 똑같이 사용하면 디자인에 대한 일관성을 유지하며 개발하기가 훨 수월해진다.
+
+이를 도와주는 도구가 바로 **StoryBook**이다.
+
+---
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FDVwLE%2FbtrseQwlQII%2FsjIS1H83olk14oUT8prOSK%2Fimg.png)
+
+`컴포넌트명.jsx`로 만들어진 파일에 컴포넌트를 작성하고 export 해준다. storybook에서는 `컴포넌트명.stories.jsx` 를 찾아서 읽고 웹페이지에 보기좋게 문서화해서 띄워주는 것이다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcBTdbz%2Fbtrsi9IIodz%2Ft1YYK4SJKqWEkp4Xy3sUN1%2Fimg.png)
+
+만들어진 컴포넌트에 위처럼 propTypes를 달아준다. 컴포넌트에 들어가는 prop들의 type을 체크할 수 있다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FxSS42%2FbtrsaS9h0gq%2FLgRcxLUYfaom2HvcZcY57K%2Fimg.png)
+
+storybook에선 해당 부분을 보고 위와 같이 문서를 만들어준다. Control 패널에서 직접 값을 수정해보면서 컴포넌트의 모습이 어떻게 바뀌는지 확인할 수 있다. 굉장히 재밌다. `Proptypes` 안에 적은 주석이 Description으로 들어간다. 열심히 적어주자.
+
+GoFrontButton 컴포넌트 하나가 (현재 기획 상에서 사용되는) 모든 진행버튼에 사용될 수 있다. 버튼의 내용과 색깔, 배경의 유무 등을 컴포넌트 안에 prop으로 전달할 수 있도록 했기 때문이다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fc0H9u7%2FbtrsfVYvFuR%2Fp5t07RccU2JYxTZAjoj3J1%2Fimg.png)
+
+`.stories.jsx`에서 컴포넌트 템플릿의 다양한 예시를 만들어주었다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FURAn0%2FbtrsfVRIXMd%2FK5CEUDQ2BfRk8XAkok2TR0%2Fimg.png)
+
+역시 문서로 볼 수 있다. 프론트 프로젝트에서 사용할 땐 코드를 복사해서 가져오기만 하면 된다.
+
+컴포넌트들을 빌드한 후에 npm 라이브러리로 배포를 시켜주었다. antd를 사용하는것처럼 우리만의 컴포넌트를 불러와서 편하게 사용할 수 있다. 이 부분이 제일 맘에 들었다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fb4sPRw%2Fbtrr3i8lBEG%2F6xMDuBf8Cird5STurv7OU0%2Fimg.png)
+
+InputForm 컴포넌트에 여러 기능들을 넣다보니까 prop의 개수가 너무 많아져서 정신없었다. input form이 들어가는 각각의 페이지마다 들어가는 prop 값을 묶어서 객체로 만들어 사용했다. prop으로는 컴포넌트를 사용할 페이지의 이름 하나만 넣어주면 된다.
+
+<br />
+
+기획이 바뀌지만 않는다면 이 편이 조금 더 깔끔하게 보인다. 어디까지나 기획이 바뀌지만 않는다면.
+
+![](https://blog.kakaocdn.net/dn/cvEJWQ/btrr9fwXioa/QlKZ0YLvUGvZGgC0kLGmWk/img.gif)
+
+---
+
+직접 사용해보며 느꼈던 장점들을 기록해본다.
+
+**디자이너의 입장에서**는 개발자들이 작업하는 컴포넌트들을 계속 보며 **소통**할 수 있는 점이 좋았다. storybook에선 개발자가 만든 컴포넌트 UI들이 문서화되어 다른 사람들도 보기 좋게 공유할 수 있다. 예전에는 다 만들고 적용한 뒤에 확인하고 수정을 거쳤다면, storybook을 이용하면 바로바로 빠른 피드백이 가능했다. main브랜치에 푸쉬가 되면 Github Action을 통해 바로바로 github page에 배포를 시켜줌으로서 편하게 이용할 수 있었다.
+
+제일 마음에 들었던건 여러사람이 각자 다른 페이지를 작업하더라도 이미 만들어진 컴포넌트를 이용해서 작업하기 때문에 세부적인 디자인이 어긋날 일이 거의 없겠다는 것.. 제일 걱정했던 부분인데 깔끔하게 해결되어서 마음이 매우 편하다!!
+
+**개발자의 입장에서**는 더욱 더 **컴포넌트답게** 만들려고 노력하게 되었다. 처음부터 재사용을 염두에 두고 만드는 컴포넌트이기 때문에 하나의 컴포넌트에 사용되는 props 하나하나에 고민을 더 하고 있다.
+
+개발을 진행하는 프론트 프로젝트의 영향을 받지 않고 컴포넌트를 **독립적으로** 만들고 테스트할 수 있다. 그렇기 때문에 기간의 절반을 컴포넌트 개발하는데 잡고, 나머지 절반을 만들어진 컴포넌트를 프론트 프로젝트에서 불러와 조립하는 데에 잡았다. 훨신 협업하기 좋은 구조인 것 같다.
+
+이전엔 이런 도구들을 도입하는데 '혼자 공부하는데 뭘 이런걸 굳이 새로 배워서 하나' 하는 생각이 들어서 그냥 넘어갔던 경험이 있었다. 이번엔 작은 프로젝트지만 여러명이 협업하는 과정에선 충분히 써볼만한 도구라고 느낀다.
+
+[배포링크](https://gosrock.github.io/Gosrock-storybook/?path=/story/example-introduction--page)

@@ -1,0 +1,102 @@
+import { Img } from "components";
+
+# 6. 타입스크립트에서<br/> Socket.io-client 사용하기
+
+_2022.09.12_
+
+1차 프로젝트에 있는 코드를 그대로 옮겨오면 될거라 생각을 했는데, 예상보다 꽤 오랜 시간 삽질을 했다. 내가 못찾는건지 타입에 대한 정보가 별로 없었음. 일단 문서를 보고 이러쿵 저러쿵 하니 되긴 했는데, 이게 정확한 방법인지는 모르겠다. 일단 잘 돌아가니 기록.
+
+저번과 마찬가지로 패키지 매니저에서 `socket.io-client` 를 설치해준다. 그리고 타입 정의를 해주려고 했는데,
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fx7Rpm%2FbtrLStPrAfK%2FbeEiKYoa9FRKDx5kdnJ8qk%2Fimg.png)
+
+안쓰는게 좋을 것 같다는건 알겠다.. 일단!!
+
+---
+
+```ts
+import io, { Socket } from "socket.io-client";
+```
+
+`io`와 함께 `Socket`도 import 해준다.
+
+```ts
+const [socket, setSocket] = useState<Socket<ServerToClientEvents>>();
+```
+
+소켓 객체를 생성해 state에 저장하는 방식이었다. 원래 Socket 타입의 제네릭으로 `<ListenEvents, EmitEvents>` 두개가 들어가는데, 지금은 정보 수신만 할거니까 ListenEvents만 지정해둠. (이렇게 해도 되는건가)
+
+#### TicketQR.tsx
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FtXdqM%2FbtrLNv8zZeK%2FrAl3yw8vCpmn0Xb4juCyK0%2Fimg.png)
+
+event 이름으로 티켓의 uuid를 사용하도록 되어 있다.
+
+```ts
+socket.on(ticketId, (data: SocketData) => {
+  if (data.success) {
+    // 생략..
+  } else {
+    // 에러처리..
+  }
+});
+```
+
+그대로 해봤음. 그리고 이런 타입 에러가 나타났다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FczzXvh%2FbtrLPcnc7t3%2FhNz1Y43dVyRAlX3QJyC34k%2Fimg.png)
+_😡😡_
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fs4dFb%2FbtrLVYVKZfv%2FVz8a9xLWYz4FhUW8xRaVMK%2Fimg.png)
+*https://socket.io/docs/v4/typescript/*
+
+`ServerToClientEvents`는 서버에서 이벤트를 수신할때의 리스너 함수 타입으로 쓰인다. `socket.on(EventName, Listener)`에서, 이벤트 이름이 'noArg'인 경우에 리스너 함수의 타입은 `()=>void` 여야 한다. 뭐 이런 식임.
+
+내 경우엔 ticketId를 eventName으로 사용하고, 리스너 함수로 `(data) => void` 형식의 함수를 사용할 수 있어야 했다. eventName과 그 리스너 함수의 타입을 지정해주지 않았을 때에 이런 오류가 생기게 된다.
+
+```ts filename="/type/socket.ts"
+export interface ServerToClientEvents {
+  noArg: () => void;
+  basicEmit: (a: number, b: string, c: Buffer) => void;
+  withAck: (d: string, callback: (e: number) => void) => void;
+  ticketId: (data: any) => void;
+}
+
+export interface ClientToServerEvents {
+  hello: () => void;
+}
+
+export interface InterServerEvents {
+  ping: () => void;
+}
+
+export interface SocketData {
+  uuid: string;
+  success: boolean;
+  date: "YB" | "OB";
+  ticketStatus: "입장완료" | "입금확인" | "확인대기" | "기한만료";
+  message: string;
+  name: string;
+  phoneNumber: string;
+  adminName: string;
+}
+```
+
+이렇게 타입을 정의해준다. 가운데 두개는 필요없는데 그냥 문서에서 긁어올때 같이 긁어왔다. data만 받아서 쓸 수 있도록 했음.
+
+```ts
+const ticketIdForSocket = ticketId as keyof ServerToClientEvents;
+socket.on(ticketIdForSocket, (data: SocketData) => {
+  if (data.success) {
+    // 생략..
+  } else {
+    // 에러처리..
+  }
+});
+```
+
+`keyof` 키워드를 이용했다. `ServerToClientEvents` 객체의 key라고 단언을 해주고 이벤트 이름으로 넣어준다. 그럼 리스너함수와 타입이 짝짜꿍이 잘 맞아지면서\(...) 오류가 사라진다.
+
+---
+
+![](https://blog.kakaocdn.net/dn/ecQBRp/btrLOfqYe08/PAhtXHfZG9hO7Pk47QBmNk/img.gif)

@@ -1,0 +1,147 @@
+import { Img } from "components";
+
+# 5. React-Query 무한스크롤 \(with useInfiniteQuery)
+
+_2022.09.12_
+
+응원톡 페이지를 위해 무한스크롤을 구현했던 기록이다.
+
+근데 이제 리액트쿼리의 `useInfiniteQuery`를 곁들인.
+
+---
+
+처음엔 단순하게 state를 이용해서 무한스크롤을 만드는 로직을 생각하고 접근했다가 삽질을 좀 했다.
+
+```js
+setList((prev) => [...prev, ...res.data.list]);
+```
+
+새 데이터를 패칭을 하게 되면, 기존에 있던 배열 상태에 새로 받아온 데이터를 추가한다. 스프레드 연산자 또는 `concat`을 사용할 수 있다.
+
+근데 useInfiniteQuery를 사용하면 살짜쿵 다름.
+
+## 1\. useInfiniteQuery
+
+```js
+  const { data, fetchNextPage } = useInfiniteQuery<InfiniteTalkType, unknown>(
+    ['talks'],
+    UsersApi.getTalks,
+    {
+      getNextPageParam: (lastPage) => lastPage.lastId,
+    },
+  );
+```
+
+쿼리함수 부분만 가져와 봤다. 쿼리 키와 패칭 함수, 그리고 옵션을 차례로 넣어준다. 제네릭은 `<Data 타입, Error 타입>`에 해당된다. 제일 중요한건 `getNextPageParam` 함수가 들어가는 옵션이다. lastPage라는 이름으로 인자로 받아서 lastId를 반환한다.
+
+lastPage는 그럼 무엇일까\(이름은 lastPage가 아닌 다른거라도 상관없다). `useInfiniteQuery` 함수를 통해 데이터를 여러번에 걸쳐 가져올 때 그 데이터들이 알아서 배열 상태에 쌓이는게 아니다. data 안의 pages의 배열로 차곡차곡 쌓인다⁽¹⁾. 근데 보통은 list만 가져오는게 아니라, lastId나 마지막 데이터인지 등의 정보가 같이 옴.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FxgfWk%2FbtrLTBsTcgu%2FneNz9EywHohj1DUo5fDf10%2Fimg.png)
+_1, 2_
+
+서버에서 받아오는 데이터의 형식은 위와 같다. 응원톡 리스트를 20개씩 받아오고, **마지막으로 받은 톡의 id**와 **마지막 데이터 여부**를 함께 넘겨준다⁽²⁾
+
+#### UsersApi.getTalks
+
+```ts
+interface InfiniteTalkType {
+  talkList: ITalk[];
+  lastId: number;
+  isLast: boolean;
+};
+
+...
+...
+
+ getTalks: async ({ pageParam = null }): Promise<InfiniteTalkType> => {
+    const { data } = await axiosPrivate.get(
+      `users/comment?lastId=${pageParam}`,
+    );
+
+    return {
+      talkList: data.data.list,
+      lastId: data.data.meta.lastId,
+      isLast: data.data.meta.lastPage,
+    };
+  },
+```
+
+`getNextPageParam`으로 넣어준 lastId가 있엇다. 위의 사진 1에서 볼 수 있음. 그 중에서 가장 마지막 인덱스의 값이 `queryFn`의 인자로 들어가는 것. 그 값을 api url의 쿼리스트링으로 넣어주고 요청을 보낸다. 그럼 그 id에 해당하는 응원톡의 다음 id부터 20개씩 또 받아올 수 있는 것. meta 객체 안에 있는 정보들을 더 편하게 쓰기 위해 꺼내서 객체 하나로 리턴하도록 했다.
+
+```tsx
+<TalkListWrapper isOpen={isOpen} ref={talkListRef}>
+  {data?.pages.map((talkList) => (
+    <TalkList talkList={talkList.talkList} key={talkList.lastId} />
+  ))}
+  <Observation />
+</TalkListWrapper>;
+
+..
+..
+
+const TalkList = ({ talkList }: { talkList: ITalk[] }) => {
+  return (
+    <Wrapper>
+      {talkList.map((talk) => (
+        <TalkBubble
+          nickName={talk.nickName}
+          content={talk.content}
+          createdAt={talk.createdAt}
+          iComment={talk.iComment}
+          key={talk.id}
+        />
+      ))}
+    </Wrapper>
+  );
+};
+
+export default TalkList;
+```
+
+무한스크롤을 통해 여러번 패칭한 응답의 데이터들은 pages 배열에 저장된다. 그리고 그 데이터들 각각에 list가 있고, 그 list를 응원톡 버블로 그려주어야 하는 것. 컴포넌트를 하나 더 써서 배열을 두개 돌려주어야한다. pages 배열, 그 안의 list 배열.
+
+## 2\. Observer
+
+스크롤을 내릴 때, 특정 시점에 새 데이터를 가져와야 한다. `react-intersection-observer` 라이브러리를 사용했다. 위의 코드블럭에서 `<Observation />`이라는 div 컴포넌트를 사용하는 것을 볼 수 있다. 해당 div 요소가 화면에 보이면 다음 데이터를 패칭하도록 해보자.
+
+```tsx filename="useGetTalks.tsx"
+import { useInView } from "react-intersection-observer";
+
+const useGetTalks = () => {
+  const { data, fetchNextPage } = useInfiniteQuery<InfiniteTalkType, unknown>(
+    ["talks"],
+    UsersApi.getTalks,
+    {
+      getNextPageParam: (lastPage) => lastPage.lastId,
+    }
+  );
+
+  const Observation = (): ReactElement => {
+    const [ref, inView] = useInView();
+
+    useEffect(() => {
+      if (!data) return;
+
+      const pageLastIdx = data.pages.length - 1;
+      const isLast = data?.pages[pageLastIdx].isLast;
+      if (!isLast && inView) fetchNextPage();
+    }, [inView]);
+
+    return <div className="observer" ref={ref} style={{ height: "20px" }} />;
+  };
+
+  return { data, Observation };
+};
+
+export default useGetTalks;
+```
+
+useGetTalks 커스텀 훅을 만들어 사용했다. `fetchNextPage`는 \(getNextPageParam을 통해 저장된) pageParams의 마지막 인덱스 값을 사용해 api 패칭 함수를 실행한다.
+
+여기서 중요하게 볼 부분은 div 요소를 반환하는 Observation 함수이다. `react-intersection-observer`에서 useInView를 import 해온다. useInView에서 제공하는 ref를 div 요소에 달아 사용할 수 있다. 해당 div가 화면에 보여지게 되면 inView 불리언 값이 `true`로 바뀐다. 가장 최근에 패칭한 데이터가 마지막 데이터가 아니고, inView가 `true`일 때, `fetchNextPage()` 함수를 실행한다.
+
+매 20개 item 아래에 높이 20px 짜리 Observation 박스가 들어간다. 스크롤이 거의 최하단으로 내려갈 때 즈음에 다음 데이터가 바로바로 패칭된다.
+
+![](https://blog.kakaocdn.net/dn/nKPi6/btrLOfqVZWL/ogX4XQjZ11lBzSMMGTGgX0/img.gif)
+
+이렇게 ReactQuery의 `useInfiniteQuery`를 이용해서 무한스크롤을 구현해보았다. 결국 설빙은 다른 사람의 품으로ㅠ

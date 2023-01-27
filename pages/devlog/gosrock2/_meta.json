@@ -1,0 +1,9 @@
+{
+  "idea_220810": "1. 기획, 디자인 개편",
+  "auth_220810": "2. 로그인 과정의 고민 (라우팅, Axios)",
+  "modal_220810": "3. 모달 전역으로 관리하기 with TypeScript",
+  "error-handling_220812": "4. React Query 공통 에러 핸들링",
+  "infiniteQuery_220912": "5. React-Query 무한스크롤 (with useInfiniteQuery)",
+  "socket-ts_220912": "6. 타입스크립트에서 Socket.io-client 사용하기",
+  "end_220914": "7. 랜딩페이지, GA, QA, 런칭!"
+}

@@ -1,0 +1,84 @@
+import { Img } from "components";
+
+# [AWS] RDS로 MySQL DB 시작하기
+
+_2021.12.28_
+
+[참고1](https://velog.io/@tmdgusya/DB-%EC%8A%A4%ED%82%A4%EB%A7%88-%EC%84%A4%EA%B3%84) [참고2](https://velog.io/@doryyy/TIL-%EB%8D%B0%EC%9D%B4%ED%84%B0-%EB%AA%A8%EB%8D%B8%EB%A7%81)
+
+RDS는 EC2와 함께 사용하며 아마존에서 제공하는 기능을 편하게 이용할 수 있게 해주는 DB전용 서버이다.
+
+## 1\. RDS 생성
+
+**1\) RDS 인스턴스를 생성하고 MySQL, 프리 티어를 선택한다.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FXgEJP%2FbtroXM6f8Yp%2FbboBpolV4XKYH0v3gCKOQ1%2Fimg.png)
+
+<br />
+
+**2\) 마스터 사용자 이름과 새 VPC 보안 그룹, 초기 데이터베이스 이름 등을 지정해준다.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fp1d4e%2Fbtro312B8li%2FUgnq5JW44bzGmq2giRhdkK%2Fimg.png)
+
+<br />
+
+**3\) 퍼블릭 액세스를 '예'로 설정한다.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fb61Lg7%2Fbtro13zGyR5%2FRYVKz0BonV8JHrkEaJKQg0%2Fimg.png)
+
+설정을 모두 완료하고 '생성 중' 상태로 몇분 기다리면 RDS 생성이 완료된다.
+
+## 2\. EC2에서 RDS 접근
+
+**1\) 인바운드 규칙을 수정한다. 사용하는 EC2 보안그룹의 그룹ID를 복사해서 넣는다.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fd8KUdn%2FbtroXMLWWnY%2FQ1RNKV0F0cIX2ORZk72ghK%2Fimg.jpg)
+
+처음엔 현재 접속한 IP만 열려있다.
+
+**2\) EC2에서 다음의 명령어를 실행하여 RDS 인스턴스에 접근한다.**
+
+```bash
+sudo mysql -u [사용자 이름] -p -h [RDS인스턴스 엔드포인트]
+```
+
+## 3\. TIME_ZONE, 인코딩 설정
+
+**1\) 파라미터 그룹을 추가한다.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FdT4P36%2Fbtro7f0o7OB%2FyIB0sK5qhOQHux4mlofYp0%2Fimg.png)
+
+- 생성한 파라미터에서 `time_zone`을 검색한다. 'Asia/Seoul' 로 값을 변경해준다.
+- `character_set` 을 검색한다. 파라미터들을 'utf8mb4' 로 설정해준다. 이모지를 사용할 수 있다.
+- `collation_server`, `collation_connection` 를 'utf8mb4_general_ci' 로 설정해준다.
+
+<br />
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FAsy0o%2Fbtro8xGyitz%2Fcm5tpWIS2klxJ7WGTWUM80%2Fimg.png)
+
+**2\) RDS의 DB 파라미터 그룹을 새로 생성한 그룹으로 변경하고, 인스턴스를 재부팅한다.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcpfRGr%2Fbtro6bYgxJ5%2FX5wBZxihccs48uaIfuKYyk%2Fimg.png)
+
+## 4\. 워크벤치에서 확인
+
+workbench로 접속을 해주었다. Hostname에는 RDS 인스턴스의 엔드포인트를 넣어준다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcSDDsi%2Fbtro6bRvqUs%2FruX1zxnKncOqvZscAgvy0K%2Fimg.png)
+
+**\+ 새로운 테이블을 만들고 한글과 이모지가 포함된 값을 넣어준다.**
+
+```sql
+USE db_rising;
+CREATE TABLE test (
+    id        INT NOT NULL AUTO_INCREMENT,
+    hello    VARCHAR(20),
+    PRIMARY KEY(id)
+);
+
+INSERT INTO test(hello) VALUES ('안녕하세요😁');
+
+SELECT * FROM test;
+```
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fd4j83P%2FbtrpcOgD9TT%2Fln9bEfNMKMtQTq2WtdKHY1%2Fimg.png)

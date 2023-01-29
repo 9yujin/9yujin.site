@@ -1,10 +1,10 @@
 {
-  "banky_220725": "1. 뱅키는 귀엽다",
-  "init_220726": "2. 보일러플레이트, 초기 세팅 (RTK, CI/CD, Craco)",
-  "bds_220727": "3. 디자인 시스템 (비스무리) 세팅 (Storybook)",
-  "dongil_221007": "4. 돈길 계약하기 UI 개발과 복잡한 로직 추상화",
-  "reactquery_221013": "5. React Query 마이그레이션",
-  "react-transition-group_221015": "6. React transition group 라우팅 트랜지션 (1) - 도입하기",
-  "react-transition-group_221102": "7. React transition group 라우팅 트랜지션 (2) - 디테일",
-  "applike_221107": "8. Applike한 UX를 위한 고민"
+  "banky-220725": "1. 뱅키는 귀엽다",
+  "init-220726": "2. 보일러플레이트, 초기 세팅 (RTK, CI/CD, Craco)",
+  "bds-220727": "3. 디자인 시스템 (비스무리) 세팅 (Storybook)",
+  "dongil-221007": "4. 돈길 계약하기 UI 개발과 복잡한 로직 추상화",
+  "reactquery-221013": "5. React Query 마이그레이션",
+  "react-transition-group-221015": "6. React transition group 라우팅 트랜지션 (1) - 도입하기",
+  "react-transition-group-221102": "7. React transition group 라우팅 트랜지션 (2) - 디테일",
+  "applike-221107": "8. Applike한 UX를 위한 고민"
 }

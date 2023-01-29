@@ -1,11 +1,11 @@
 {
-  "ssr_230122": "Next.js SSR과 cookie 다루기 (getInitialProps를 사용해도 되는가)",
-  "monorepo_230103": "프론트엔드 모노레포 삽질기 (1) - 도입 이유, yarn",
-  "monorepo_230108": "프론트엔드 모노레포 삽질기 (2) -  프로젝트 세팅",
-  "monorepo_230118": "프론트엔드 모노레포 삽질기 (3) - CICD 배포",
-  "ceos-refactor_221104": "다시 만드는 React-Messenger (selectorFamily, FaCC)",
-  "craco_220711": "절대경로 설정하기 (with TS, Storybook, CRA, Craco)",
-  "react-deploy_220703": "Docker + Nginx + GitHub Actions 프로젝트 배포 (1)",
-  "react-deploy_220705": "Docker + Nginx + GitHub Actions 프로젝트 배포 (2)",
-  "storybook_220629": "Storybook 설정 및 Github Actions 배포 자동화"
+  "ssr-230122": "Next.js SSR과 cookie 다루기 (getInitialProps를 사용해도 되는가)",
+  "monorepo-230103": "프론트엔드 모노레포 삽질기 (1) - 도입 이유, yarn",
+  "monorepo-230108": "프론트엔드 모노레포 삽질기 (2) -  프로젝트 세팅",
+  "monorepo-230118": "프론트엔드 모노레포 삽질기 (3) - CICD 배포",
+  "ceos-refactor-221104": "다시 만드는 React-Messenger (selectorFamily, FaCC)",
+  "craco-220711": "절대경로 설정하기 (with TS, Storybook, CRA, Craco)",
+  "react-deploy-220703": "Docker + Nginx + GitHub Actions 프로젝트 배포 (1)",
+  "react-deploy-220705": "Docker + Nginx + GitHub Actions 프로젝트 배포 (2)",
+  "storybook-220629": "Storybook 설정 및 Github Actions 배포 자동화"
 }

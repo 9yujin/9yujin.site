@@ -1,0 +1,124 @@
+import { Img } from "components";
+
+# [Nginx] 도메인 연결, HTTPS 적용 (Let's Encrypt)
+
+_2021.12.28_
+
+## 1\. 도메인 연결
+
+이전에 가비아에서 구매를 해놓고 안쓰는 도메인이 있어서, 그 도메인에 내 IP를 연결했다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fcz8M9a%2FbtroXNcPbYC%2FvfcKahoVe4qPxfiEWaFbQ0%2Fimg.jpg)
+
+10분 정도 기다리면 내 도메인과 IP가 매칭이 된다.
+
+## 2\. Certbot 설치 (Let's Encrypt)
+
+Let's Encrypt는 SSL 인증서를 무료로 발급해 HTTPS를 널리 보급하기 위해 시작된 비영리기관이다. 직접 PEM key들을 발급받아서 설정해주어도 되지만 많이 번거롭기 때문에, 웹서버에 쉽게 세팅할 수 있도록 도와주는 도구들이 있다.
+
+`wget`으로 Certbot-auto를 다운받아 설치하는 블로그들을 보고 따라했는데 해당 파일이 존재하지 않는다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fc4pOAK%2FbtroZEzUIEc%2FZ7ksPLiVF4m3x9CVbBztnk%2Fimg.png)
+_더 이상 지원하지 않는다고 한다._
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbO21H1%2FbtrpaI8AtJo%2FUK2L6fUuHKMdinJkiW38Rk%2Fimg.png)
+
+대신 `snap`으로 Certbot을 설치할 수 있다. apt와 비슷한(?) 패키지 관리 시스템이다.
+
+- snap을 실행하기 위해 snapd를 설치한다.
+
+```bash
+sudo apt-get install snapd
+```
+
+- Certbot을 설치하고 심볼릭 링크를 연결한다.
+
+```bash
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+```
+
+## 3\. 인증서 발급, Nginx 설정
+
+**1\) 아래의 명령어를 통해 SSL 인증서를 발급받고 nginx 설정을 구성한다.**
+
+```bash
+sudo certbot --nginx
+```
+
+이것저것 물어본다.
+
+```bash
+> Enter email address #인증서 갱신이 필요하거나 공지사항이 있을 때 메일로 알려준다.
+> ... Do you agree?   #이용 약관 동의
+> Would you be willing to share your email address.. #내 이메일 주소 공유
+> **Enter the domain name** #도메인 주소 입력
+```
+
+**2\) 모든 절차가 끝나면 인증서 발급이 완료된다.**  
+인증서와 키가 저장된 위치를 학인할 수 있다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Ftl1lY%2Fbtro38tuJDc%2FtgkVzA8huXIQ5ym3Hf3wf0%2Fimg.png)
+
+#### 결과 확인
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcdtDM5%2FbtroWCoBPap%2F34ad1i6593MutTGFrsjyA1%2Fimg.png)
+
+자물쇠가 잘 걸려 있다.
+
+`/etc/nignx/sites-available/default` 를 확인해보면 다음과 같은 부분이 추가되어 있다.
+
+```nginx
+server {
+...
+...
+        listen [::]:443 ssl ipv6only=on; # managed by Certbot
+        listen 443 ssl; # managed by Certbot
+        ssl_certificate /etc/letsencrypt/live/[도메인]/fullchain.pem; # managed by Certbot
+        ssl_certificate_key /etc/letsencrypt/live/[도메인]/privkey.pem; # managed by Certbot
+        include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+```
+
+## 3-1. 인증서 자동갱신
+
+Let’s Encrypt에서 발급하는 인증서는 90일에 한번씩 직접 갱신을 해주어야 한다.
+
+```bash
+certbot renew #인증서 갱신하기
+```
+
+다행히 우분투에는 정해진 일시에 반복적으로 특정 작업을 할 수 있는 프로그램이 기본 설치되어 있다.  
+[참고](https://devlog.jwgo.kr/2019/04/16/how-to-lets-encrypt-ssl-renew/)
+
+## 4\. 리다이렉트 설정
+
+두가지 경우의 리다이렉트 설정을 한다.  
+ip주소로 요청이 들어왔을 때 도메인으로 리다이렉트, http로 요청이 들어왔을 때 https로 리다이렉트.
+
+**1) IP 주소로 요청이 들어왔을 때 도메인으로 리다이렉트가 되도록 설정을 해보자.**
+
+```
+server {
+    listen 80;
+    listen [::]:80;
+    server_name 13.xxx.xxx.62;
+    return 301 https://9yujin.shop$request_uri;
+}
+```
+
+**2) 80번 포트(http)로 접속을 시도했을 때 https로 리다이렉트가 되도록 설정을 해보자.**
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FY1DfN%2Fbtro31VHabx%2FrMRO6EKq9Sm42h3naEbBz0%2Fimg.png)
+
+방금 확인한 `/etc/nignx/sites-available/default` 바로 아래 서버 블록을 위과 같이 바꾸어 준다.  
+return 404 (해당 페이지 없음)을 지우고, `return 301 [Redirection 주소];` 를 입력한다.
+
+여기서 301은 HTTP Status Code로, **영구 이동(Permanently moved)** 을 의미한다. 즉, "네가 요청한 페이지가 영구히 이전되었으므로 이 주소로 다시 접속을 시도해 봐라."라는 의미이다. [참고](https://www.tuwlab.com/ece/26993)
+
+![](https://blog.kakaocdn.net/dn/rqqpK/btro6aLFPpn/oeqI3yVIRHSadToWFl6uTk/img.gif)
+
+---
+
+[참고1](https://darrengwon.tistory.com/547)

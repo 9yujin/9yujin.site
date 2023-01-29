@@ -1,0 +1,52 @@
+import { Img } from "components";
+
+# \[Nginx] 설치와 설정
+
+_2021.12.28_
+
+## 1\. Nginx 설치
+
+```bash
+sudo apt install nginx
+```
+
+- `sudo service nginx start` 로 nginx를 실행한다.
+- `sudo service nginx status` 로 실행이 잘 되고 있는지 확인할 수 있다.
+
+## 2\. Nginx 설정
+
+nginx의 설정들은 모두 `nginx.conf` 에 있다.
+
+nginx.conf 의 `http` 블록에 include 되어 있는 파일들이다.
+
+```bash
+include /etc/nginx/conf.d/*.conf;
+include /etc/nginx/sites-enabled/*;
+```
+
+- `/conf.d` : conf 저장 폴더. 자주 사용되는 설정은 conf.d 폴더 하위의 설정으로 빼서 include 해오는 방식으로 중복을 제거할 수 있다.
+- `/sites-enabled` : 활성화된 웹사이트들의 설정 파일들이 위치한다
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcbA1bI%2Fbtro13e4RDY%2FJsUZdn7XV0BrhGNKvEd5Nk%2Fimg.png)
+
+- default 파일은 `/sites-available` 디렉토리에 기본적으로 있는 설정 파일이다. 해당 디렉토리에 있는 가상 서버 파일들 중에서 활성화시키고 싶은 파일을 `/sites-enabled` 디렉토리로 심볼릭 링크를 걸어준다.
+
+```nginx
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        root /var/www/html;
+
+        server_name [domain name];
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+}
+```
+
+서버 블록은 대충 위와 같은 형태이다. 80번 포트를 열고 요청이 오면 `root`에 지정된 경로에서 요청한 파일을 찾아 브라우저에 보여준다. 기본적으로 `/var/www/html`로 되어있다.
+
+---
+
+[참고1](https://www.manualfactory.net/10903) [참고2](https://juneyr.dev/nginx-basics)

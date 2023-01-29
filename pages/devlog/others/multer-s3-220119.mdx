@@ -1,0 +1,138 @@
+import { Img } from "components";
+
+# [Node.js] S3로 이미지 업로드 (2) - multer-s3
+
+_2022.01.19_
+
+nodejs에서 이미지 등의 파일을 멀티파트 형식으로 업로드할 때 multer 라는 패키지를 설치해서 미들웨어로 이용한다.
+
+```bash
+npm i multer
+npm i multer-s3 aws-sdk
+```
+
+## s3.json
+
+```json
+{
+  "accessKeyId": "AKIAVLEU2D2EIKMGBVQS",
+  "secretAccessKey": "",
+  "region": "ap-northeast-2"
+}
+```
+
+이전 포스팅에서 IAM을 설정하고 받은 어세스키와 시크릿키를 넣어둔다. 이 시크릿 키가 유출이 되면 청구서에 엄청난 액수가 찍히고 추운 겨울에 현관문 밖으로 내쫓길수도 있으니까 꼭꼭 주의한다. region에는 s3 버킷에 설정된 리전을 적는다. 서울이니까 보통은 `ap-northeast-2` 로 되어 있을걸.
+
+## **multer.js**
+
+multer와 관련된 파일을 작성한다. config 디렉토리 안에 만들어주었다.
+
+```js
+const multer = require("multer");
+const multerS3 = require("multer-s3");
+const aws = require("aws-sdk");
+aws.config.loadFromPath(__dirname + "/s3.json");
+const s3 = new aws.S3();
+const uploadReview = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: "bjclone",
+    acl: "public-read",
+    key: function (req, file, cb) {
+      cb(
+        null,
+        "review/" + Date.now() + "." + file.originalname.split(".").pop()
+      );
+    },
+  }),
+  limits: { fileSize: 1000 * 1000 * 10 },
+});
+
+const uploadItem = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: "bjclone",
+    acl: "public-read",
+    key: function (req, file, cb) {
+      cb(null, "item/" + Date.now() + "." + file.originalname.split(".").pop());
+    },
+  }),
+  limits: { fileSize: 1000 * 1000 * 3 },
+});
+
+module.exports = {
+  uploadReview,
+  uploadItem,
+};
+```
+
+aws-sdk를 가져와서 초기화한다. 위에서 미리 만들어둔 s3.json파일로 어세스 정보를 담는다.
+라우트마다 각각 다른 디렉토리에 저장하기 위해서 upload 함수를 둘로 만들었다.
+하나는 `review/` 에, 하나는 `item/` 디렉토리 아래에 저장되도록.
+
+<br />
+`key`에 담는 함수의 콜백에서 저장될 이미지의 이름을 설정한다. **디렉토리 \+ 현재시간
+\+ 확장자명**으로 지었다. `limits` 로 저장될 파일의 사이즈의 상한을 정할 수 있다.
+정한 사이즈를 넘어가면 오류를 콜백으로 반환한다. 나중에 다시 볼 예정.
+
+## Route.js
+
+```js
+const res = require('express/lib/response');
+const upload = require('../../../config/multer');
+
+module.exports = function (app) {
+    const item = require('./itemController');
+    const jwtMiddleware = require('../../../config/jwtMiddleware');
+
+    // 1. 상품등록 API (+ 태그, 상품이미지 등)
+    app.post('/api/items', jwtMiddleware, upload.uploadItem.array('image', 12), item.postItems);
+    // 2. 상품수정 API
+    app.put('/api/items/:itemId', jwtMiddleware, upload.uploadItem.array('image', 12), item.putItems);
+
+    ..
+    }
+```
+
+익스프레스의 라우트 부분만 모아놓은 파일이다. upload라는 이름으로 `multer.js`를 불러와서 사용한다. 이 부분은 상품을 등록하는 api이므로 `upload.uploadItem`을 미들웨어로 넣어주었다.
+
+`array('image',12)` : 최대 12개의 파일을 image라는 이름으로 받는다.
+여러개의 파일을 받을 땐 `array`를 사용한다. 한 개의 파일만 받을 때는 `single`을 쓰면 된다.
+
+## Controller.js
+
+```js
+const postItems = async (req, res) => {
+  const postBody = req.body; //클라에서 넘어온 값
+  const userIdFromJWT = req.verifiedToken.userId;
+  const postImage = req.files; // 이미지 파일
+  if (!userIdFromJWT) {
+    return res.send(errResponse(baseResponse.TOKEN_VERIFICATION_FAILURE)); //3000
+  }
+
+  const imageKey = [];
+  if (postImage) {
+    postImage.forEach((v) => {
+      imageKey.push(v.key);
+    });
+  }
+  const postItemsResponse = await itemService.createItem(
+    postBody,
+    userIdFromJWT,
+    imageKey
+  );
+  return res.send(postItemsResponse);
+};
+```
+
+api 요청을 받아서 오는 곳은 이 함수이다. multer로 받은 파일들은 `req.files`로 받을 수 있다. formdata에 같이 담긴 다른 데이터들은 똑같이 `req.body`로 받아온다.
+
+<Img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FzHPpW%2Fbtrrcinsc5w%2Fa18ldqQBFMPEdjDe80dWpk%2Fimg.png" />
+
+예시로 이미지를 두개 업로드해보았다. location에 업로드된 이미지의 주소가 보인다. 아마존aws닷컴 어쩌구저쩌구에서 `어쩌구저쩌구`가 s3에 저장된 이미지의 이름이다. 그 이름은 `key` 라는 이름으로 따로 있다. 저 key를 우리 서비스의 데이터베이스에 저장해서 쓰면 된다. 다시 클라이언트에서 요청할 때 key만 다시 내려주면, 클라이언트 단에서 아마존aws닷컴 뒤에 어쩌구저쩌구를 붙여서 사용하도록 했다.
+
+---
+
+이렇게 이미지 업로드를 구현하고 나서 뿌듯해하고 있을 때 알림이 울렸다. 야,, 에러 로그 찍혔다 봐바라.
+
+이미지 파일의 용량이 limit보다 큰 경우와 이미지의 형식이 설정해둔 형식이 아닐 때 등등 multer에서 에러를 반환한다. 그 에러는 upload 함수의 콜백에서 핸들링할 수 있다. 열심히 찾아보니 콜백함수 안에서 에러를 제어한다는데... 미들웨어로 multer을 쓸 때 어떤식으로 그 에러를 넘겨야 할지 모르겠다. 조금 더 찾아봐야겠다ㅠㅠ

@@ -1,0 +1,69 @@
+import { Img } from "components";
+
+# \[Nginx] Node.js \(Express) 서버 HTTPS 적용 \(proxy)
+
+_2021.12.31_
+
+Node.js Express 서버를 AWS EC2 상에 배포를 해보자. EC2에 git, npm, node.js 설치 등의 사전 세팅은 생략하고 넘어간다.
+
+Node.js 파일들과 패키지를 모두 내려받은 후에 파일을 실행시키는 것으로 서버를 돌릴 수는 있다.
+
+```bash
+node index.js
+```
+
+클라이언트에서 내 서버의 api로 요청을 보냈더니,
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcfT2jH%2FbtrppzDLCr5%2F9aNmJIg4DmarTdZNYdgNZk%2Fimg.png)
+
+리액트 프론트가 배포된 url에는 HTTPS 보안이 되어 있지만, 요청을 보내는 내 서버의 url은 그렇지 않다. 반드시 HTTPS 걸린 주소로 요청을 보내야 한다.
+
+HTTPS 적용은 [이 글](https://9yujin.site/devlog/others/ssl_211228)에서 참고할 수 있다.
+
+---
+
+#### Nginx 설정 (Proxy)
+
+곧바로 3000번 포트(기본) 에서 node를 실행해서 요청을 받는다면 ssl 인증을 걸어줄 수 없다. node 서버 앞에서 Nginx가 먼저 요청을 받고, 내 서버로 그 요청을 돌려주면 된다. 유가릿?
+
+```nginx
+server {
+    #listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+
+    server_name xxx.shop;
+
+    location /app {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-NginX-Proxy true;
+
+        proxy_pass http://127.0.0.1:3000/app;
+        proxy_redirect off;
+     }
+
+    ssl_certificate /etc/letsencrypt/live/xxx.shop/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/xxx.shop/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+```
+
+모든 api들의 uri가 /app으로 시작하도록 작성했다.
+
+예를 들어 클라이언트는 `https://xxx.shop/app/users/login` 로 요청을 보낼 수 있다.
+
+https(443)으로 요청을 보내면 nginx에서 node 서버 (3000)으로 돌려준다.
+
+---
+
+#### PM2
+
+pm2를 이용해 node 서버를 무중단 배포할 수 있다.
+
+```bash
+pm2 start index.js
+```
+
+pm2를 설치한 후에 해당 디렉토리로 들어가서 실행한다.

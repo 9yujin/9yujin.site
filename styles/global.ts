@@ -1,5 +1,6 @@
 import { css } from "@emotion/react";
 import { articleStyle } from "./article";
+import { fullscreen } from "./fullscreen";
 
 export const globalStyle = css`
   @font-face {
@@ -43,4 +44,6 @@ export const globalStyle = css`
 
   //article 내에서
   ${articleStyle}
+
+  ${fullscreen}
 `;

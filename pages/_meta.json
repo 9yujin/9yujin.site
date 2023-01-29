@@ -2,10 +2,10 @@
   "index": {
     "title": "Introduction",
     "display": "hidden",
-    "theme": { "layout": "full" }
+    "theme": { "layout": "raw" }
   },
   "devlog": { "title": "Devlog", "type": "page" },
-  "writings": { "title": "Essay", "type": "page" },
+  "essay": { "title": "Essay", "type": "page" },
   "resume": {
     "title": "Resume",
     "type": "page"

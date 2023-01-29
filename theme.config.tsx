@@ -11,6 +11,10 @@ const config: DocsThemeConfig = {
       return {
         titleTemplate: "%s – 9YUJIN Archive",
       };
+    } else {
+      return {
+        titleTemplate: "9YUJIN Archive",
+      };
     }
   },
   head: () => {

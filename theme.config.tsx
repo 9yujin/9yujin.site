@@ -1,5 +1,5 @@
 import React from "react";
-import { DocsThemeConfig } from "nextra-theme-docs";
+import { DocsThemeConfig, useConfig } from "nextra-theme-docs";
 import { useRouter } from "next/router";
 import Gyujin from "public/icons/gyujin.svg";
 import dynamic from "next/dynamic";
@@ -9,9 +9,32 @@ const config: DocsThemeConfig = {
     const { route } = useRouter();
     if (route !== "/") {
       return {
-        titleTemplate: "%s – 9yujin",
+        titleTemplate: "%s – 9YUJIN Archive",
       };
     }
+  },
+  head: () => {
+    const { asPath } = useRouter();
+    const { frontMatter } = useConfig();
+    return (
+      <>
+        <meta property="og:url" content={`https://9yujin.site${asPath}`} />
+        <meta
+          property="og:title"
+          content={frontMatter.title || "GYUJIN Archive"}
+        />
+        <meta
+          property="og:description"
+          content={frontMatter.description || "@9yu.oo 기술 블로그"}
+        />
+        <meta
+          property="description"
+          content={frontMatter.description || "@9yu.oo 기술 블로그"}
+        />
+
+        <link rel="icon" href="/favi.ico" />
+      </>
+    );
   },
   logo: (
     <>

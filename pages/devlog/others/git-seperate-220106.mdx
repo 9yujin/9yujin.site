@@ -1,0 +1,86 @@
+import { Img } from "components";
+
+# \[Git] 하위 디렉토리를 별도의 레포지토리로 분리하기
+
+_2022.01.06_
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FHy4mC%2FbtrpVvOrHDU%2FFOvyS6fzn0eSrKxYIjqzQ0%2Fimg.png)
+
+이전에 혼자 진행했던 프로젝트를 깃에 올릴 때, 클라이언트 디렉토리와 서버 디렉토리를 하나의 레포지토리에 모아서 올렸다. 나중에 코드를 수정하고 업데이트해야 하거나 보기에 조금 불편했던 경험이 있었다. 클라이언트와 서버 디렉토리를 각각의 레포지토리로 분리를 해서 따로 저장하기로 했다.
+
+임의로 이름을 지어서 쓰자면,
+
+> project  
+> ├── client  
+> ├── server
+
+로 된 레포지토리를 각각
+
+> project-client  
+> ├── ....
+>
+> project-server  
+> ├── ....
+
+두 개의 별도의 레포지토리로 분리를 할 예정.
+
+#### 1\. 각각의 레포지토리를 생성한다.
+
+나의 경우엔 topster-frontend, topster-backend 두 개를 만들어주었다.
+
+#### 2\. git subtree split
+
+**분리할 프로젝트의 디렉토리로 이동한 후**에 아래의 명령어를 입력한다.
+
+```bash
+git subtree split -P <분리할 하위 디렉토리> -b <새로운 브랜치 이름>
+
+# 나의 경우
+git subtree split -P client -b splitted
+```
+
+새로운 브랜치가 생성되고, \<분리할 하위 디렉토리> 에 있는 파일들로 채워진다. 여기서 새로운 브랜치는 임시로 사용하기 때문에 어떤 이름을 써도 상관 없다.
+
+#### 3\. 새 디렉토리에 분리
+
+새 디렉토리를 생성한 후에 이동한다. 깃 저장소를 초기화하고 위에서 생성한 브랜치를 `pull` 해온다.
+
+```bash
+mkdir ../<새 디렉토리 이름>
+cd ../<새 디렉토리 이름>
+git init
+git pull <기존 프로젝트 디렉토리 위치> <생성한 브랜치 이름>
+
+# 나의 경우
+mkdir ../topster-frontend
+cd ../topster-frontend
+git init
+git pull /Users/hangyujin/Desktop/JBBP/topster_withPY splitted
+```
+
+#### 4\. 원격저장소에 push
+
+```bash
+ git remote add origin <분리한 레포지토리 주소>
+ git push -u origin master
+
+ # 나의 경우
+ git remote add origin https://github.com/9yujin/topster-frontend.git
+ git push -u origin master
+```
+
+remote를 설정해주고 `master` 브랜치에 `push`한다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbGKXt4%2FbtrpTgEAim2%2FJeiZh3gpw0NqsvrNrfu4n1%2Fimg.png)
+
+이러이러한 이유로 거부되었다고 뜬다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbSbVBn%2FbtrpVPeXnJH%2FgYqNMTBDJXKfTBt7yTZNK0%2Fimg.png)
+
+레포지토리에 유실될 위험이 있는 데이터가 없기 때문에 그냥 강제로 `push`해 주었다.
+
+---
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbSXbwJ%2FbtrpU3R5jMw%2F3Le2U2EjYPcBZziNaTETH1%2Fimg.png)
+
+이렇게 성공적으로 분리 완료 😁

@@ -1,0 +1,230 @@
+import { Img } from "components";
+
+# 타입스크립트 기초 (2) - 제네릭
+
+_2022.04.29_
+
+```ts
+function logText<T>(text: T): T {
+  console.log(text);
+  return text;
+}
+
+logText<string>("하이");
+//함수를 호출하는 시점에 인자의 타입을 지정해주는것
+```
+
+<br />
+
+- **기존 타입 정의 방식 :** 함수를 중복으로 선언해야하는 불편함이 있다.
+
+```ts
+function logText(text: string) {
+  console.log(text);
+  return text;
+}
+
+function logNumber(num: number) {
+  console.log(num);
+  return num;
+}
+
+logText("a");
+logNumber(10);
+```
+
+<br />
+
+- **유니온 타입 방식 :** 마우스를 올려 타입을 확인하면, string 또는 number 가 아닌 항상 string | number 자체로 보여진다.
+
+```ts
+function logText(text: string | number) {
+  console.log(text);
+  return text;
+}
+
+logText("a");
+logTExt(10);
+```
+
+#### 제네릭의 장점
+
+```ts
+function logText<T>(text: T): T {
+  // <T> : 함수를 정의할때 받은 타입을
+  // (text: T) : 인자의 타입으로도 쓰고
+  // : T : 함수를 반환할때도 쓰겠다.
+  console.log(text);
+  return text;
+}
+
+const str = logText<string>("abc");
+str.split("");
+
+const login = logText<boolean>(true);
+// 이렇게 사용하면 불리언값을 넘겨서 사용 가능
+```
+
+호출하는 시점에 타입을 정해주고, 인자와 반환값의 타입까지 정할 수 있다.
+
+<br />
+
+- **예제**
+
+```ts
+const emails = [
+    { value: 'naver.com', selected: true},
+    { value: 'naver.com', selected: false},
+    { value: 'naver.com', selected: false},
+];
+
+const numbers = [
+    { value: 1, selected: true},
+    { value: 2, selected: false},
+    { value: 3, selected: false},
+];
+
+function example(item: {value: string, selected: boolean}  |
+        {value: number, selected: boolean}) {...}
+```
+
+이런식으로 value의 type만 다른 객체 배열들을 함수의 인자로 넘기기 위해서, 이런 꼴의 유니온타입을 설정할 수 있다.
+
+```ts
+interface Email {
+    value: string;
+    selected: boolean;
+}
+interface Number {
+    value: number;
+    selected: boolean;
+}
+
+const emails: Email[] = [
+    { value: 'naver.com', selected: true},
+    { value: 'naver.com', selected: false},
+    { value: 'naver.com', selected: false},
+];
+
+const numbers: Number[] = [
+    { value: 1, selected: true},
+    { value: 2, selected: false},
+    { value: 3, selected: false},
+];
+
+function example(item: Email | Number) {
+...
+}
+```
+
+보기좋게 인터페이스를 정의하여 사용할 수 있다. 하지만 다양한 타입을 사용하는 객체가 많아지면 정의해야 하는 비슷하게 생긴 인터페이스가 많아짐.
+
+그걸 해결하기 위해,
+
+#### 인터페이스에 제네릭 선언
+
+```ts
+//기존
+interface DropdownItem {
+  value: string;
+  selected: boolean;
+}
+
+const obj: Dropdown = { value: "abc", selected: false };
+
+//제네릭 선언
+interface DropdownItem<T> {
+  value: T;
+  selected: boolean;
+}
+
+const obj: Dropdown<number> = { value: 123, selected: false };
+```
+
+<br />
+
+- **예제**
+
+```ts
+const emails: DropdownItem<string>[] = [
+    { value: 'naver.com', selected: true},
+    { value: 'naver.com', selected: false},
+    { value: 'naver.com', selected: false},
+];
+
+const numbers: DropdownItem<number>[] = [
+    { value: 1, selected: true},
+    { value: 2, selected: false},
+    { value: 3, selected: false},
+];
+
+function example(item: DropdownItem<string> | DropdownItem<number>) {
+    ...
+}
+```
+
+#### 여기서 유니온타입을 없애려면?
+
+```ts
+function example<T>(item: DropdownItem<T>) { ... }
+```
+
+함수 자체에도 제네릭을 단다.
+
+#### 제네릭의 타입 제한
+
+```ts
+function logTextLength<T>(text: T): T {
+  console.log(text.length);
+  return text;
+}
+```
+
+오류난다!! 코드 입장에서는 저 text가 제네릭으로 설정되어 있기 때문에 어떤 타입인지 알 수 없다.
+
+```ts
+function logTextLength<T>(text: T[]): T[] {
+    console.log(text.length);
+    text.forEach(...)
+    return text;
+}
+```
+
+이런식으로 제네릭에 배열을 달아주면 조금 더 제한을 해줄 수 있다.
+
+#### 제네릭 타입 제한 2
+
+```ts
+interface LengthType {
+  length: number;
+}
+
+function logTextLength<T extends LengthType>(text: T): T {
+  text.length;
+  return text;
+}
+```
+
+제네릭으로 받은 타입\(T)은 항상 LengthType의 하위 타입일 것. → 항상 length 속성을 가지고 있다고 제한한다.
+
+length라는 속성을 가지고 있는 객체, 또는 string\(타입자체에 이미 있잖아) 만 인자로 넘길 수 있게 된다.
+
+#### 제네릭 타입 제한 3
+
+```ts
+interface ShoppingItem {
+  name: string;
+  price: number;
+  stock: number;
+}
+
+function getItemOption<T extends keyof ShoppingItem>(itemOption: T): T {
+  return itemOption;
+}
+
+getItemOption("name");
+```
+
+ShoppingItem이 가지고 있는 key 중 하나가 제네릭\(T)이 된다.
+
+즉, 저 함수의 인자로는 name, price, stock 중 하나가 들어올 수 있다.

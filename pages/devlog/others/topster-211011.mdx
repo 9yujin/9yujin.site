@@ -1,0 +1,373 @@
+import { Img } from "components";
+
+# \[React + Flask] 탑스터 SNS 토이 프로젝트
+
+_2021.10.11_
+
+2021년 10월에 공부를 시작하고 처음으로 무언가를 만들어보면서 간략하게 적었던 기록들이다. 티스토리 블로그를 개설하면서 그대로 옮긴 글. 이때도 열심히 좀 쓸걸 그랬다. 코드를 디자인한 방법이 정석적인 방법인지는 모르겠지만 어찌 됐든 돌아가기는 한다.
+
+<br />
+만들어진 탑스터를 이미지로 변환해서 파일로 다운받을 수 있고, 서버에 업로드해서 볼
+수 있다. sns 피드처럼 만들고 싶어서 회원가입과 로그인도 간단히 구현했다.
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbRco1g%2FbtrtqCEolmG%2FrEEBXxPBHUY145pimwGpmk%2Fimg.png)
+
+---
+
+## 음악 API
+
+<Img src="https://blog.kakaocdn.net/dn/lwEqF/btro7Bvv4PP/Pq8aiIgBzei1AKRpm6c2Zk/img.gif" />
+
+앨범아트 이미지를 가져오는데는 last.fm의 api를 사용했다.
+
+유튜브에서 크롤링해와서 만든 데이터들이라고 한다.  
+검색한 결과들이 두 줄로 가로로 보여진다. 드래그앤 드랍으로 탑스터에 옮겨 배치할 수 있다.
+
+> last.fm api에서 불러온 앨범아트 이미지들이 실제와 다르거나 없는 것들이 꽤 있었다.
+>
+> 현재는 Spotify api로 바꾸었다. Spotipy 라는 파이썬 라이브러리를 이용해서 백엔드에서 받아와 프론트로 넘겨준다.
+
+## 드래그 앤 드랍
+
+드래그앤 드랍으로 파일을 보낼 땐 `dataTransfer` 메소드를 이용한다. [참고](https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData)
+
+드래그 중에 다른 타일 위로 지나갈 때의 애니메이션을 위해 `onDragEnter`와 `onDragLeave` 이벤트에 대한 핸들러도 만들어주었다.
+
+```js
+export const handleDragStart = (e, title) => {
+  console.log("drag start");
+  let cardImg = e.target.style.backgroundImage;
+  let albumTitle = e.target.id;
+  console.log(albumTitle);
+  e.dataTransfer.setData("card_img", cardImg);
+  e.dataTransfer.setData("album_Title", albumTitle);
+};
+
+export const handleDragOver = (e) => {
+  e.preventDefault(); //이걸 해야 드롭이 된다!!
+};
+
+export const handleDragEnter = (e) => {
+  let dragNode = e.target.parentNode;
+  dragNode.id = "dragover";
+};
+
+export const handleDragLeave = (e) => {
+  let dragNode = e.target.parentNode;
+  dragNode.id = "";
+};
+
+export const handleDrop = (e) => {
+  let dragNode = e.target.parentNode;
+  dragNode.id = "";
+  const card_img = e.dataTransfer.getData("card_img");
+  const album_Title = e.dataTransfer.getData("album_Title");
+  e.target.style.backgroundImage = card_img;
+  e.target.id = album_Title;
+};
+```
+
+## 회원가입
+
+입력한 정보를 그냥 json 형식으로 보냈다. 이미 있는 id면 그냥 리턴하고 새 id인 경우에 회원가입을 진행한다. `bcrypt` 라이브러리를 이용해서 암호화를 해서 db에 저장한다. 자꾸 오류가 나는데 바이너리 형식으로 나오나해서 str으로 디코딩해서 보내니까 오류는 안난다.
+
+```python
+ @app.route('/api/join', methods=['POST'])
+def post_join():
+    data = request.get_json()
+    findID = db.user.find_one({"join_id":data['join_id']})
+    if findID:
+        return jsonify({'msg':"invalid"})
+
+    password = data['join_password']
+    bpw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    str_bpw = bpw.decode('utf-8')
+    data['join_password'] = str_bpw
+    print(data)
+    db.user.insert_one(data)
+    return jsonify({'msg':"registered"})
+```
+
+![](https://blog.kakaocdn.net/dn/dvLpr7/btro8xUeR2M/z4x47HgbfH9zFPCNRkAleK/img.gif)
+
+## 로그인
+
+```python
+@app.route('/api/login', methods=['POST'])
+def post_login():
+    data = request.get_json()
+    password = data['login_password']
+
+    findID = db.user.find_one({"join_id":data['login_id']},{'_id': False})
+    if findID:
+        db_bpw = findID['join_password']
+        db_id = findID["join_id"]
+        checkpw = bcrypt.checkpw(password.encode('utf-8'), db_bpw.encode('utf-8'))
+        print(checkpw)
+        if checkpw:
+            jwt_token = jwt.encode({"id":db_id, 'exp':datetime.utcnow() + timedelta(weeks=5)}, app.config['JWT_SECRET_KEY'], algorithm)
+            str_jwt = jwt_token.decode('utf-8')
+            db.user.update({'join_id':db_id}, {'$set':{'jwt':str_jwt}})
+            return jsonify({'msg':"allowed", "name":db_id,"access_token":str_jwt })
+    print(data)
+    return jsonify({'msg':"tryagain"})
+```
+
+받아온 데이터의 비밀번호와 db에 있는 비밀번호를 비교한다. db에 있는 값은 암호화된 값. checkpw가 `true`라면 로그인 과정을 진행한다. jwt 토큰을 발급해서 다시 클라이언트로 보내주자. 토큰의 payload에는 유저 id가 담겨있고, 유효기간은 5주로 일단 해 놓았다. 어세스 토큰과 리프레쉬 토큰에 대해서 조금 더 공부해 보아야겠다.
+
+```python
+if (msg == "allowed") {
+        context.setUser({
+          name: response.data.name,
+          id: details.id,
+        });
+        const access_token = response.data.access_token;
+        cookies.set("jwt", access_token, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30, //httponly 옵션을 없애니까 된다,,
+        });
+} else if (msg == "tryagain") {
+        setError("ID와 비밀번호를 정확히 입력해 주세요. ");
+}
+```
+
+클라이언트에서는 받아온 jwt 토큰을 쿠키에 저장했다. `universal-cookie` 라는 패키지를 이용했음. httpOnly 옵션을 넣었더니 쿠키가 생성이 안됐다. 혹시 몰라서 뺐더니 되더라. 왜그럴까 찾아봤더니 도메인이 .com 같은 류가 아니면 막는단다..
+
+## html-to-image
+
+dom 요소를 이미지로 변환할 수 있다. 다양한 형태의 이미지파일을 얻을 수 있다.
+
+```js
+const onSave = useCallback(() => {
+  console.log(canvas.current.firstChild.style.width);
+  if (canvas.current === null) {
+    return;
+  }
+  toPng(canvas.current.firstChild, {
+    cacheBust: true,
+  })
+    .then((dataUrl) => {
+      console.log(dataUrl);
+      const link = document.createElement("a");
+      link.download = "my-topster.png";
+      link.href = dataUrl;
+      link.click();
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+}, [canvas]);
+```
+
+useRef 훅으로 해당 dom을 가져와서 toPng 함수에 매개변수로 넘겼다. 이미지를 dataUrl 형식으로 반환하는데 그대로 이미지 파일로 저장이 되더라. `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAk0AAAIpC...` 대충 이런 형태이다.
+
+---
+
+![](https://blog.kakaocdn.net/dn/I0syD/btrpdrFGMmD/l5KbPVxvK2jfdB354yNun1/img.gif)
+
+## 이미지 업로드
+
+SNS 피드처럼 업로드한 이미지들을 볼 수 있도록 했다. 이미지를 서버쪽에 저장하려고 했지만 어디다 저장할지가 고민. 개인적인 공부를 위해 하는 프로젝트라, 아마존s3 같은 스토리지 서비스를 쓰기엔 굳이 라는 느낌이 들었다. 서버의 로컬 디렉토리에 파일을 저장하기로 했다.
+
+```python
+@app.route('/api/upload', methods=['POST'])
+def post_topster():
+    now = datetime.now()
+    now2 = now.strftime("%D_%H%M_%S")
+    date = now2.replace('/', '-')
+
+    try:
+        data = request.get_json()
+        userid = request.args.get('user')
+
+        absolute_path = os.path.abspath(__file__)
+        path = os.path.dirname(absolute_path)
+        path_root = os.path.dirname(path)
+        path_user = path_root + '/images/' + userid
+
+        if not os.path.exists(path_user):
+            os.makedirs(path_user)
+
+        dataValue = str(data['topsterimage'])
+        dataBin=dataValue.split(',')[1]
+        imgdata = base64.b64decode(dataBin)
+
+        filename = path_user + '/' + date +'.png'
+        data = {"userid":userid, "filename":filename, "like":0,"likeuser": [None], "date":now}
+        db.posts.insert_one(data)
+        with open(filename, 'wb') as f:
+            f.write(imgdata)
+
+        return jsonify({'msg':"upload succeeded"})
+    except:
+        return jsonify({'msg':"error"})
+```
+
+`images/'유저id'/'올린시간'.png` 위치에 파일을 저장한다. 폴더가 없으면 생성한 후에 저장한다. 자꾸 데이터가 바이너리 형태로 받아져서 \(왠지 모르겠다..) 다시 base64로 인코딩해서 저장한다.
+
+## 이미지 가져오기
+
+```js
+const getPost = async () => {
+    let userid;
+    try {
+    .
+    .
+    .
+      const response = await axios({
+        method: "GET",
+        url: `http://***:5000/api/feed?user=${userid}&search=all&offset=${offset}&limit=5`,
+      });
+      const results = response.data.feedData;
+      results.map((result, index) => {
+        .
+        .
+        .
+      );
+      //더 불러오기
+      if (results.length === 5) {
+        setOffset((prev) => prev + 5);
+      } else {
+        setOffset(false);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+```
+
+프론트에서 `offset`과 `limit` 값을 쿼리파라미터로 넘겨준다. 값을 성공적으로 받아오면 `offset`을 `limit`만큼 키워서 넘겨줌.
+
+```python
+#-------피드 가져오기-------
+@app.route('/api/feed', methods=['GET'])
+def get_feed():
+    user = request.args.get('user')
+    search = request.args.get('search', None)
+    offset = request.args.get('offset', None)
+    limit = request.args.get('limit', None)
+    print("user:", user,"search:", search,"offset:", offset, "limit:", limit)
+    if search :
+        if search == "all": #전체 피드
+            data = list(db.posts.find({}).sort("_id",-1).skip(int(offset)).limit(int(limit)))
+        else: #내가 쓴 피드
+            data = list(db.posts.find({'userid':search}).sort("_id",-1)) #새거부터 맨 위로
+        newdata = list()
+        for i in data:
+            #이미지 파일 가져오기
+            with open(i['filename'], "rb") as f:
+                filedata = f.read()
+                encoded = base64.b64encode(filedata)
+                topsterimage = "data:image/png;base64," + encoded.decode('utf-8')
+            #피드 좋아요 여부 가져오기
+
+            likeuser = i['likeuser']
+            if user in likeuser:
+                likebool = 1
+            else:
+                likebool = 0
+            doc = {'userid':i['userid'], 'topsterImage':topsterimage, 'date':i['date'], '_id':str(i["_id"]), "like":i['like'], "likebool":likebool }
+
+            newdata.append(doc)
+        return jsonify({"feedData":newdata})
+
+    return jsonify({'msg':"received"})
+```
+
+## 모달
+
+내 포스트를 삭제하기 전에 한번 더 물어보는 모달 창을 만들었다.
+
+```js
+  const openModal = (e) => {
+    this_modal.current.classList.remove("hidden");
+    const data = e.currentTarget.getAttribute("postid");
+    setDelPostID(data);
+  };
+  const closeModal = () => {
+    this_modal.current.classList.add("hidden");
+  };
+.
+.
+.
+
+ <div class="modal hidden" ref={this_modal}>
+      <div class="modal_overlay" ref={overlay} onClick={closeModal}>
+      </div>
+      <div class="modal_content">
+        <ModalFeed
+          closeModal={closeModal}
+          delPostID={delPostID}
+          setDelSucceeded={setDelSucceeded}
+        />
+      </div>
+</div>
+```
+
+해당 버튼을 누르면 모달창이 보여지고, 보여지는 컴포넌트 안에 로그아웃 함수를 넣어 놨다.
+
+```css
+/*모달*/
+.modal {
+  border: 1px solid black;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal_overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+
+.modal_content {
+  background-color: white;
+  position: relative;
+  top: 0px;
+  width: 270px;
+  height: 120px;
+  text-align: center;
+  border-radius: 20px;
+}
+
+.hidden {
+  display: none;
+}
+```
+
+인스타그램 웹 페이지의 디자인을 참고해서 만들었다. 3닷 메뉴 버튼을 클릭하면,
+
+<Img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FdfUOFg%2FbtrpdnXDphu%2Fk7sMqgRs1KuX24XeQA1670%2Fimg.png" />
+
+다음과 같은 모달창이 화면에 나온다. 모달창이 나온 경우에는 화면 스크롤이 되지 않도록 했다.
+
+---
+
+## 결과
+
+![](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FVnO3M%2FbtrtwjwAjyC%2FkTr3LPZzgptxzJl8yO79q1%2Fimg.png)
+
+나름 만족스러운 결과물이 나왔다. EC2가 갑자기 결제돼서 무서워서 바로 서버 내리긴 했지만... 프로젝트를 하면서 난잡하게 머릿속에 있던 리액트 지식들이 어느정도 정리됐던 것 같다.
+
+<br />
+<br />
+
+<div style={{ paddingBottom: "56.25%", position: "relative" }}>
+  <iframe
+    style={{ position: "absolute" }}
+    src="https://play-tv.kakao.com/embed/player/cliplink/426381164?service=daum_tistory"
+    width="100%"
+    height="100%"
+    frameborder="100%"
+    allowfullscreen="true"
+  ></iframe>
+</div>
+*최종 시연 영상*

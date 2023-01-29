@@ -6,7 +6,8 @@
   },
   "frontend": "Frontend",
   "others": "Others",
-  "cs": "CS",
+  "javascript": "JS/TS",
+  "cs": { "title": "CS", "display": "hidden" },
   "-2": {
     "type": "separator",
     "title": "개발 일기"

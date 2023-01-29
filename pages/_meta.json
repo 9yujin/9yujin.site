@@ -1,5 +1,9 @@
 {
-  "index": { "title": "Introduction", "display": "hidden" },
+  "index": {
+    "title": "Introduction",
+    "display": "hidden",
+    "theme": { "layout": "full" }
+  },
   "devlog": { "title": "Devlog", "type": "page" },
   "writings": { "title": "Essay", "type": "page" },
   "resume": {

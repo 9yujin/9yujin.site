@@ -1,0 +1,163 @@
+import { Img } from "components";
+
+# 타입스크립트 기초 \(3) - 추론, 단언, 가드, 호환
+
+_2022.04.30_
+
+## 타입 추론
+
+#### 인터페이스와 제네릭을 이용한 타입 추론
+
+```ts
+// 제네릭으로 넘겨준 값을 인터페이스의 속성으로 사용할 수 있음
+interface Dropdown<T> {
+  value: T
+  title: string;
+}
+
+var shoppingItem: Dropdown<string> = {
+    value: // 마우스 올리면 string으로 뜬다.
+```
+
+인터페이스를 extends해서 사용할 때도,
+
+```ts
+interface Dropdown<T> {
+  value: T
+  title: string;
+}
+var items: Dropdown<number> = {
+  value: 10,
+  title: 'a'
+}
+
+interface DetailedDropdown<T> extends Dropdown<T> {
+  description: string;
+  tag: T;
+}
+var detailItems: DetailedDropdown<number> = {
+  title: 'a',
+  description: 'b',
+    value: //마우스 올리면 number로 뜬다. (확장으로 들어간 것도 추론됨)
+}
+```
+
+#### Best Common Type
+
+```ts
+// number
+var arr = [1, 2, 3];
+
+//string | number | boolean
+var arr1 = [1, 2, true, "a"];
+```
+
+가장 근접한 타입을 추론한다..? 그냥 유니온으로 묶어서 표현.
+
+---
+
+## 타입 단언
+
+```ts
+let a;
+a = 20;
+a = "sample";
+
+let b = a;
+```
+
+a에 마우스 올리면 그냥 any라 뜸. 하지만 눈으로 보기에는 string으로 들어가야하는게 맞지. 타입스크립트보다 개발자가 타입에 대해 더 잘 알고 있을때 사용한다.
+
+```ts
+let b = a as string;
+```
+
+`as`를 사용해 확실하게 타입을 단언해줄 수 있다.
+
+---
+
+## 타입 가드
+
+```ts
+interface Developer {
+  name: string;
+  skill: string;
+}
+interface Person {
+  name: string;
+  age: number;
+}
+
+function introduce(): Developer | Person {
+  // 합집합인것들을 다 객체에 담아서 리턴을 해도,
+  return { name: "Tony", age: 33, skill: "IronMaking" };
+}
+
+var tony = introduce();
+console.log(tony.skill); //에러난다. 교집합이 아닌건.
+```
+
+이럴때 위에서 배운 타입 단언을 이용하면
+
+```ts
+if ((tony as Developer).skill) {
+  console.log((tony as Developer).skill);
+} else if ((tony as Person).age) {
+  console.log((tony as Person).age);
+}
+```
+
+이와 같이 해당 속성이 있는지 확인한 후에 실행을 할 수 있다. 하지만 가독성이 매우 안좋아짐.
+
+#### 그래서 타입가드라는걸 사용하는데,
+
+```ts
+function isDeveloper(target: Developer | Person): target is Developer {
+  return (target as Developer).skill !== undefined; // T of F
+}
+```
+
+`target is Developer` : 넘겨받은 파라미터(target)이 Developer 타입인지 구분한다
+
+```ts
+if (isDeveloper(tony)) {
+  console.log(tony.skill);
+} else {
+  console.log(tony.age);
+}
+```
+
+이런식으로 부울값을 전달받아 분기해서 진행할 수 있다.
+
+---
+
+## 타입 호환
+
+```ts
+interface Developer {
+  name: string;
+  skill: string;
+}
+interface Person {
+  name: string;
+}
+
+var developer: Developer;
+var person: Person;
+
+person = developer; // 오류 (호환 안됨)
+developer = person; // 호환 됨
+```
+
+이런것들을 구조적 타이핑이라고 부른다. 타입이 서로 호환되는지의 여부를 판단하는 것. 인터페이스 외에도 클래스, 함수, 제네릭 등에도 똑같이 적용된다.
+
+```ts
+interface NotEmpty<T> {
+  data: T;
+}
+var notempty1: Empty<string>;
+var notempty2: Empty<number>;
+
+notempty1 = notempty2; // 오류 (호환 안됨)
+notempty2 = notempty1; // 오류 (호환 안됨)
+```

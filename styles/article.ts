@@ -1,4 +1,5 @@
 import { css } from "@emotion/react";
+import { stepsContainer } from "./steps-container";
 
 export const articleStyle = css`
   article {
@@ -154,5 +155,7 @@ export const articleStyle = css`
         color: var(--gray-500);
       }
     }
+
+    ${stepsContainer}
   }
 `;

@@ -2,24 +2,27 @@ import { Banner, FullScreen, Spacing } from "components";
 import Link from "next/link";
 
 <div class="fullscreen">
-  <Banner />
+  {/* <Banner /> */}
 
   <div className="intro-wrapper">
     <h1>과정을 <strong>기록</strong>하는<br/>개발자 <strong>한규진</strong>입니다.</h1>
     <Spacing size={20}/>
-    
-    <div style={{maxWidth:"500px"}}>
+
+    <div className="steps-container">
       <h4><Link className="badge" href="/devlog">Devlog <span style={{color:"#c6e3ff"}}>→</span></Link></h4>
-      <p style={{marginLeft:"8px"}}>단순히 내가 사용했던 기술과 코드를 나열하는데 그치지 않고,<br/>고민하고 느꼈던 과정을 남기고 공유하려고 합니다. </p>
-     <Spacing size={16}/>
-     <hr />
+      <p style={{marginLeft:"8px"}}>단순히 사용했던 기술과 코드를 나열하는데 그치지 않고,<br/>고민하고 느꼈던 과정을 남기고 공유하려고 합니다. </p>
+
      <h4><Link className="badge" href="/essay/nexters_230118">Essay <span style={{color:"#c6e3ff"}}>→</span></Link></h4>
      <p style={{marginLeft:"8px"}}>이런저런 글을 씁니다. </p>
-     <Spacing size={16}/>
-     <hr />
+
      <h4><Link className="badge" href="/resume">Resume <span style={{color:"#c6e3ff"}}>→</span></Link></h4>
-     <p style={{marginLeft:"8px"}}>이것저것 합니다.</p>
-     <Spacing size={16}/>
+     <p style={{marginLeft:"8px"}}>레쥬메로 삼행시해보겠습니다.</p>
+      <ul style={{listStyle:"inside", marginTop:"8px"}}>
+        <li style={{marginLeft:"8px"}}>레 : 제가 맘에 드시면 연락처 주세요</li>
+        <li style={{marginLeft:"8px"}}>쥬 : 연락처 주기싫음 열라 쳐주세요</li>
+        <li style={{marginLeft:"8px"}}>메 : 연락처 아님 열라쳐~ </li>
+      </ul>
     </div>
+
   </div>
 </div>

@@ -6,21 +6,23 @@ export const fullscreen = css`
   }
 
   .intro-wrapper {
-    max-width: 90rem;
+    max-width: 49rem;
     padding-left: max(env(safe-area-inset-left), 1.5rem);
     padding-right: max(env(safe-area-inset-right), 1.5rem);
     margin: 0 auto;
 
     h1 {
-      font-size: 2.75rem;
+      font-size: 2.25rem;
       padding-top: 2rem;
       line-height: 130%;
+
+      margin-top: 72px;
     }
     @media (min-width: 768px) {
       h1 {
         font-size: 3rem;
         padding-top: 2rem;
-        margin-top: -180px;
+        margin-top: 72px;
       }
     }
 
@@ -40,13 +42,13 @@ export const fullscreen = css`
     }
 
     h4 {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600 !important;
-      padding-top: 2rem;
+      padding-top: 1.5rem;
     }
     p {
       line-height: 1.75rem;
-      margin-top: 1.25rem;
+      margin-top: 0.75rem;
     }
   }
 `;

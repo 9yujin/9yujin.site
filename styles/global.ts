@@ -1,6 +1,7 @@
 import { css } from "@emotion/react";
 import { articleStyle } from "./article";
 import { fullscreen } from "./fullscreen";
+import { stepsContainer } from "./steps-container";
 
 export const globalStyle = css`
   @font-face {
@@ -46,4 +47,6 @@ export const globalStyle = css`
   ${articleStyle}
 
   ${fullscreen}
+
+  ${stepsContainer}
 `;

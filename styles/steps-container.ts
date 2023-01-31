@@ -9,14 +9,15 @@ export const stepsContainer = css`
     border-color: rgb(229 231 235/1);
     margin-bottom: 3rem;
   }
-  .steps-container h3 {
+  .steps-container h4 {
     counter-increment: step;
+    margin-top: 1.75rem !important;
   }
-  .steps-container h3:before {
+  .steps-container h4:before {
     content: counter(step);
     display: inline-block;
     position: absolute;
-    margin-top: 3px;
+
     margin-left: -41px;
     width: 33px;
     height: 33px;

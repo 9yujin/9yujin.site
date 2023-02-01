@@ -155,7 +155,5 @@ export const articleStyle = css`
         color: var(--gray-500);
       }
     }
-
-    ${stepsContainer}
   }
 `;

@@ -16,13 +16,12 @@ export const fullscreen = css`
       padding-top: 2rem;
       line-height: 130%;
 
-      margin-top: 72px;
+      margin-top: 48px;
     }
     @media (min-width: 768px) {
       h1 {
         font-size: 3rem;
         padding-top: 2rem;
-        margin-top: 72px;
       }
     }
 

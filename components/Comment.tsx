@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import React, { createRef, useEffect } from "react";
+import React, { createRef, useRef, useEffect } from "react";
 
 const Comment: React.FC = () => {
-  const elem = createRef<HTMLDivElement>();
+  const elem = useRef<HTMLDivElement>();
 
   useEffect(() => {
     if (elem.current === null) return;

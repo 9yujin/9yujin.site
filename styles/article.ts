@@ -24,7 +24,7 @@ export const articleStyle = css`
       font-weight: 700 !important;
     }
     h4 {
-      color: var(--gray-500);
+      opacity: 0.8;
     }
 
     //제목 간격
@@ -92,7 +92,9 @@ export const articleStyle = css`
       border: none;
       padding: 3px 6px !important;
       margin-right: 2px;
-      background-color: var(--gray-200) !important;
+      @media (prefer-color-scheme: dark) {
+        background-color: var(--gray-200) !important;
+      }
 
       font-family: "Pretendard", Pretendard, -apple-system, BlinkMacSystemFont,
         system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",

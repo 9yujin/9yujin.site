@@ -14,9 +14,25 @@ export const globalStyle = css`
   :root {
     --main-blue: #006be6;
     --blue-100: #f0f7ff;
+    --blue-200: #c6e3ff;
     --gray-100: #f8f8f8;
     --gray-200: #e9e9e9;
-    --gray-500: #353535;
+    --gray-300: #c7c7cb;
+    --gray-400: #7a7a80;
+    --gray-500: #39393a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --main-blue: #4880ee;
+      --blue-100: #2c2c34;
+      --blue-200: #39393a;
+      --gray-100: #222528;
+      --gray-200: #7a7a80;
+      --gray-300: #c7c7cb;
+      --gray-400: #e9e9e9;
+      --gray-500: #39393a;
+    }
   }
 
   body,

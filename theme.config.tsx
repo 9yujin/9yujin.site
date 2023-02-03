@@ -72,7 +72,6 @@ const config: DocsThemeConfig = {
     ),
   },
   gitTimestamp: null,
-  darkMode: false,
   main: ({ children }) => {
     const displayHidden = ["/", "/devlog", "/resume", "/writings"];
     const { pathname } = useRouter();
@@ -100,6 +99,7 @@ const config: DocsThemeConfig = {
     },
     defaultMenuCollapseLevel: 0,
   },
+  darkMode: false,
 };
 
 export default config;

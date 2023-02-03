@@ -22,7 +22,7 @@ export const stepsContainer = css`
     width: 33px;
     height: 33px;
     text-align: center;
-    text-indent: -1px;
+    text-indent: 1px;
     color: #999;
     border-radius: 100%;
     border: 4px solid #fff;
@@ -30,5 +30,15 @@ export const stepsContainer = css`
     line-height: 1.5rem;
     font-size: 1rem;
     font-weight: 400;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .steps-container {
+      border-color: #272727;
+    }
+    .steps-container h4:before {
+      border: 4px solid rgb(17, 17, 17);
+      background: #252525;
+    }
   }
 `;

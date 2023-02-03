@@ -29,15 +29,22 @@ export const fullscreen = css`
       color: var(--main-blue);
       background-color: var(--blue-100);
       border: 1px solid var(--blue-100) !important;
+
       border: none;
       padding: 3px 8px !important;
       margin-right: 2px;
       cursor: pointer;
 
       &:hover {
-        box-shadow: 0 5px 30px -10px #c6e3ff;
-        border: 1px solid #c6e3ff !important;
+        box-shadow: 0 5px 30px -10px #c6e3ff33;
+        border: 1px solid var(--blue-200) !important;
       }
+    }
+
+    html[class~="dark"] .badge {
+      color: var(--main-blue-dark);
+      background-color: var(--blue-100-dark);
+      border: 1px solid var(--blue-100-dark) !important;
     }
 
     h4 {

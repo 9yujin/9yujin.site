@@ -1,0 +1,83 @@
+import { Img } from "components";
+
+# 뱅키즈
+
+_어린이를 위한 금융경험 교육 서비스 창업팀_ <br/><br/>
+[앱스토어](https://apps.apple.com/kr/app/%EB%B1%85%ED%82%A4%EC%A6%88/id6444064518) [구글플레이](https://play.google.com/store/apps/details?id=com.bankidz.bankidzapp) [깃허브](https://github.com/bankidz/bankidz-client)
+
+<div style={{ display: "flex", marginTop: "10px" }}>
+  <p style={{ width: "80px", color: "var(--gray-400)" }}>진행 기간</p>
+  <p>2022.06 ~ 2022.12</p>
+</div>
+<div style={{ display: "flex", marginTop: "10px" }}>
+  <p style={{ width: "80px", color: "var(--gray-400)" }}>역할</p>
+  <p>프론트엔드 개발</p>
+</div>
+<div style={{ display: "flex", marginTop: "10px" }}>
+  <p style={{ width: "80px", color: "var(--gray-400)" }}>팀 구성</p>
+  <p>기획2 디자인2 프론트2 백엔드2</p>
+</div>
+
+## 서비스 개요
+
+![](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/fb5adeaa-edc9-4f90-ae22-da4c3edf01ba/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230209%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230209T122450Z&X-Amz-Expires=86400&X-Amz-Signature=f8723e9bd38ae1d99d2e4337563519c922aaec3c6547afb692ddadbc5c36dbf7&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject) ![](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/346bb8ca-a00b-4854-a720-28af3bfc98af/Untitled.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20230209%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20230209T122639Z&X-Amz-Expires=86400&X-Amz-Signature=70cf5b2400a299af13ad166ac890d98770789cecbdb9823f373c2575959fce76&X-Amz-SignedHeaders=host&response-content-disposition=filename%3D%22Untitled.png%22&x-id=GetObject)
+
+- 아이들이 재밌게 금융을 경험하고, 이를 통해 올바른 금융 습관을 형성하도록 돕는 어린이 전용 핀테크 서비스입니다. 저축 기반의 실전 금융 경험 제공을 MVP로 먼저 선보이고, 점차 기능을 늘려나가고 있습니다.
+- 연합 IT창업 동아리에서 만난 팀원(9명)들과 시작한 팀입니다. 기획자, 디자이너와 함께 초기 기획부터 실제 서비스 출시까지 완전한 협업을 경험해볼 수 있었습니다. 다수의 창업 경진대회 수상, IR 데모데이 결선 진출 등의 성과로 인해 서비스 개발과 창업 활동을 이어나가는 중입니다.
+- 모바일 내 웹앱으로 제공됩니다. 앱푸시를 제외한 모든 비즈니스 로직을 웹 기술로 구현했습니다.
+
+#### 사용 기술
+
+- **코어**: React, TypeScript
+- **상태관리**: RTK, React Query
+- **디자인 시스템**: [storybook](<https://github.com/bankidz/bankidz-client/blob/dev/%5Bbankidz.github.io/bankidz-client%5D(https:/bankidz.github.io/bankidz-client)>), [Figma](https://www.figma.com/file/pF7iygMk2IXYGZxXockGY8/%5B1.0-ver%5D-%EB%94%94%EC%9E%90%EC%9D%B8?node-id=2%3A3), Theme-provider
+- **스타일링**: Styled-components
+- **코드품질**: ESLint, Prettier
+- **CI/CD**: Github-actions, Docker
+- **분산 버전 관리**: Git with Git-flow
+- **협업**: [Swagger](https://bankids.click/swagger-ui/index.html), Github
+- **웹뷰 앱**: React Native with EXPO
+
+## 기여 사항
+
+- 주요 UI, 비즈니스 로직 (돈길 계약하기, 돈길 걷기, 마이페이지) 개발
+- Storybook을 통한 컴포넌트 기반 개발 도입, 디자인시스템 구축 ([관련 포스팅](https://www.9yujin.site/devlog/bankidz/bds-220727))
+- Applike한 UX를 위한 고민 ([관련 포스팅](https://www.9yujin.site/devlog/bankidz/applike-221107))
+- 라우팅, 레이아웃 컴포넌트 구조 세팅
+- 전역상태로 관리되는 바텀시트
+- Github Action과 Docker 기반 CI/CD 구축
+- 서버 상태 관리와 에러 처리를 위해 RTK → React Query 도입 ([관련 포스팅](https://www.9yujin.site/devlog/bankidz/reactquery-221013))
+
+## 이야기
+
+전문 기획자, 디자이너와 함께 6개월간 창업을 준비하며 현업에 가까운 많은 일을 했습니다. 기획 단계부터 IR, 출시를 위한 QA와 스토어 리젝사유 대응까지. 어디서도 쉽게 해볼 수 없는 경험이었습니다. 같은 개발자끼리 뿐만 아니라 **전체 팀원들과의 효율적인 협업**을 위해 많은 고민을 했습니다.
+
+- 부피가 큰 프로젝트의 코드를 감당하는 법. 코딩컨벤션과 협업 규칙, 린팅.
+- 레포지토리 이슈를 사용하면 개발자들끼리만 소통을 하게 된다는 문제가 있었습니다. 전체 팀원들과 진행상황을 실시간으로 공유하기 위해 노션에서 칸반보드를 만들어 조금 더 원활한 협업을 할 수 있도록 했습니다.
+- 서버단 에러시마다 웹훅을 통해 슬랙 알림을 받습니다. 또한 깃허브 레포지토리나 노션 칸반보드 페이지에도 변경점이 생기면 슬랙으로 알림을 받아볼 수 있습니다.
+
+오랜기간 프로젝트를 진행하며 **끊임없이 리팩토링과 유지보수**를 해왔습니다. 뱅키즈는 단순한 프로젝트가 아니라 새로 발견한 인사이트들을 마음껏 적용해볼 수 있는 플레이그라운드가 될 수 있었습니다.
+
+- 스토리북을 이용한 디자인시스템 구축, 리액트 쿼리 마이그레이션, 디렉토리 구조에 대한 고민 등 규모가 큰 프로젝트에서 할 수 있는 작업을 해보았습니다.
+- 지속가능한 컴포넌트에 대한 컨퍼런스 영상을 통해 얻은 인사이트를 뱅키즈 코드에 적용시켜보았습니다. 커스텀훅을 이용한 관심사의 분리, 선언형 컴포넌트 등을 통해 변경이 용이한 컴포넌트를 구현했습니다.
+
+## 개발 과정 (블로그 포스팅)
+
+- [[뱅키즈] 1. 뱅키는 귀엽다](https://www.9yujin.site/devlog/bankidz/banky-220725)
+- [[뱅키즈] 2. 보일러플레이트, 초기 세팅 (RTK, CI/CD, Craco)](https://www.9yujin.site/devlog/bankidz/init-220726)
+- [[뱅키즈] 3. 디자인 시스템 (ThemeProvider, Storybook)](https://www.9yujin.site/devlog/bankidz/bds-220727)
+- [[뱅키즈] 4. 돈길 계약하기 UI 개발과 복잡한 로직 추상화](https://www.9yujin.site/devlog/bankidz/dongil-221007)
+- [[뱅키즈] 5. React Query 마이그레이션](https://www.9yujin.site/devlog/bankidz/reactquery-221013)
+- [[뱅키즈] 6. React transition group 라우팅 트랜지션 (1) - 도입하기](https://www.9yujin.site/devlog/bankidz/react-transition-group-221015)
+- [[뱅키즈] 7. React transition group 라우팅 트랜지션 (2) - 디테일 잡기](https://www.9yujin.site/devlog/bankidz/react-transition-group-221102)
+- [[뱅키즈] 8. Applike한 UX를 위한 고민](https://www.9yujin.site/devlog/bankidz/applike-221107)
+
+## 성과
+
+총 상금 1370만원
+
+- (22.07.14) SC제일은행 'Women in Fintech' : 최종선정, Creator상 수상
+- (22.08.28) 전국 대학생 창업컨퍼런스 '시도' : 결승진출
+- (22.08.31) 예비창업패키지 프리스쿨 : 최종선정
+- (22.10.10) 서강대학교 SGU 창업동아리 : 최종선정
+- (22.10.15) d·camp '10월 D·Day x 캠퍼스리그' : 결승진출

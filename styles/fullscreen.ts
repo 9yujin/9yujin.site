@@ -3,6 +3,11 @@ import { css } from "@emotion/react";
 export const fullscreen = css`
   .fullscreen {
     min-height: calc(100vh - 4rem);
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
   }
 
   .intro-wrapper {
@@ -15,8 +20,14 @@ export const fullscreen = css`
       font-size: 2.25rem;
       padding-top: 2rem;
       line-height: 130%;
-
+      text-align: center;
       margin-top: 48px;
+    }
+    .title-description {
+      font-size: 1.25rem;
+      text-align: center;
+      color: var(--gray-400);
+      margin-top: 16px;
     }
     @media (min-width: 768px) {
       h1 {

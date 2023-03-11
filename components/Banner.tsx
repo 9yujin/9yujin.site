@@ -29,7 +29,9 @@ const Container = styled.div`
 
     height: 200px;
     @media (min-width: 768px) {
-      height: 280px;
+      & {
+        height: 280px;
+      }
     }
     width: 100%;
   }

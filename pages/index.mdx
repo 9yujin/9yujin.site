@@ -1,14 +1,25 @@
-import { Banner, FullScreen, Spacing, LinkIndex, PostLink } from "components";
+import {
+  Banner,
+  FullScreen,
+  Spacing,
+  LinkIndex,
+  PostLink,
+  Stack,
+} from "components";
 import Link from "next/link";
 
 <div class="fullscreen">
   {/* <Banner /> */}
+<div className="intro-wrapper">
+  <h1>
+    <strong>한규진</strong>
+  </h1>
+  <div className="title-description">@9yu.oo 개발 블로그</div>
+  <Spacing size={80} />
+  <Stack />
+  <Spacing size={80} />
 
-  <div className="intro-wrapper">
-    <h1><strong>한규진</strong> </h1>
-    <div className='title-description'>@9yu.oo 개발 블로그</div>
-    <Spacing size={80}/>
-    <LinkIndex />
+<LinkIndex />
 
     <Spacing size={80} />
     <h2>Recent.</h2>

@@ -13,10 +13,13 @@ const LinkIndex = () => {
             <Devlog />
           </IconCircle>
           <div>
-            <Title>개발 노트 / 개발 일기</Title>
-            <Description>
+            <Title>개발 노트/일기</Title>
+            <Description className="pc">
               단순히 사용했던 기술과 코드를 나열하는데 그치지 않고, <br />
               고민하고 느꼈던 과정을 남기고 공유하려고 합니다.
+            </Description>
+            <Description className="mobile">
+              이런저런 공부를 합니다.
             </Description>
           </div>
         </LinkTitle>
@@ -56,6 +59,10 @@ const Grid = styled.div`
   grid-template-columns: 1fr 1fr;
   grid-gap: 16px;
   margin-top: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 const LinkTitle = styled.div`
   display: flex;
@@ -74,6 +81,22 @@ const LinkTitle = styled.div`
     cursor: pointer;
     box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.15);
   }
+
+  @media (min-width: 768px) {
+    .mobile {
+      display: none;
+    }
+  }
+  @media (max-width: 767px) {
+    height: 150px;
+    .pc {
+      display: none;
+    }
+  }
+
+  & > div:last-of-type {
+    padding-top: 4px;
+  }
 `;
 
 const IconCircle = styled.div`
@@ -85,6 +108,13 @@ const IconCircle = styled.div`
   align-items: center;
   justify-content: center;
   margin-right: 20px;
+  padding: 18px;
+
+  @media (max-width: 767px) {
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+  }
 `;
 const Title = styled.div`
   font-size: 24px;

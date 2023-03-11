@@ -6,3 +6,4 @@ export * from "./Banner";
 export * from "./Homepage";
 export * from "./LinkIndex";
 export * from "./PostLink";
+export * from "./Stack";
